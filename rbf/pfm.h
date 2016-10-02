@@ -1,0 +1,77 @@
+#ifndef _pfm_h_
+#define _pfm_h_
+
+typedef unsigned PageNum;
+typedef int RC;
+typedef char byte;
+
+#define PAGE_SIZE 4096
+#include <string>
+#include <climits>
+using namespace std;
+
+class FileHandle;
+
+class PagedFileManager
+{
+public:
+    // Access to the _pf_manager instance
+    static PagedFileManager* instance();
+
+    // Create a new file
+    RC createFile    (const string &fileName);
+
+    // Destroy a file
+    RC destroyFile   (const string &fileName);
+
+    //  Open a file
+    RC openFile      (const string &fileName, FileHandle &fileHandle);
+
+    //  Close a file
+    RC closeFile     (FileHandle &fileHandle);
+
+protected:
+    // Constructor
+    PagedFileManager();
+
+    // Destructor
+    ~PagedFileManager();
+
+private:
+    static PagedFileManager *_pf_manager;
+};
+
+
+class FileHandle
+{
+public:
+    // variables to keep the counter for each operation
+    unsigned readPageCounter;
+    unsigned writePageCounter;
+    unsigned appendPageCounter;
+
+    // Default constructor
+    FileHandle();
+
+    // Destructor
+    ~FileHandle();
+
+    // Get a specific page
+    RC readPage(PageNum pageNum, void *data);
+
+    // Write a specific page
+    RC writePage(PageNum pageNum, const void *data);
+
+    // Append a specific page
+    RC appendPage(const void *data);
+
+    // Get the number of pages in the file
+    unsigned getNumberOfPages();
+
+    // Put the current counter values into variables
+    RC collectCounterValues(unsigned &readPageCount,
+                            unsigned &writePageCount,
+                            unsigned &appendPageCount);
+};
+
+#endif
