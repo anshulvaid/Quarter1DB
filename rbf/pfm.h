@@ -14,6 +14,7 @@ class FileHandle;
 
 class PagedFileManager
 {
+friend class PagedFileManagerTest;   // Allow access to test private methods
 public:
     // Access to the _pf_manager instance
     static PagedFileManager* instance();
@@ -39,6 +40,14 @@ protected:
 
 private:
     static PagedFileManager *_pf_manager;
+
+    // Checks if file exists on the given path (absolute or relative)
+    bool fileExists(const string& fileName);
+
+    // Resets the memory allocated for the static instance.
+    // Only used for testing, to enable testing multiple features in the same
+    // program.
+    void reset();
 };
 
 

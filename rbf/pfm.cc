@@ -1,4 +1,5 @@
 #include "pfm.h"
+#include <sys/stat.h>
 
 PagedFileManager* PagedFileManager::_pf_manager = 0;
 
@@ -37,6 +38,20 @@ RC PagedFileManager::closeFile(FileHandle& fileHandle) {
     return -1;
 }
 
+bool PagedFileManager::fileExists(const string& fileName) {
+    struct stat buffer;
+    return (stat (fileName.c_str(), &buffer) == 0);
+}
+
+void PagedFileManager::reset() {
+    delete _pf_manager;
+    _pf_manager = NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+// File Handle class
+///////////////////////////////////////////////////////////////////////////
 
 FileHandle::FileHandle() {
     readPageCounter = 0;
