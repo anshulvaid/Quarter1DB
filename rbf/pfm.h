@@ -19,16 +19,16 @@ public:
     static PagedFileManager* instance();
 
     // Create a new file
-    RC createFile    (const string &fileName);
+    RC createFile    (const string& fileName);
 
     // Destroy a file
-    RC destroyFile   (const string &fileName);
+    RC destroyFile   (const string& fileName);
 
     //  Open a file
-    RC openFile      (const string &fileName, FileHandle &fileHandle);
+    RC openFile      (const string& fileName, FileHandle& fileHandle);
 
     //  Close a file
-    RC closeFile     (FileHandle &fileHandle);
+    RC closeFile     (FileHandle& fileHandle);
 
 protected:
     // Constructor
@@ -69,9 +69,9 @@ public:
     unsigned getNumberOfPages();
 
     // Put the current counter values into variables
-    RC collectCounterValues(unsigned &readPageCount,
-                            unsigned &writePageCount,
-                            unsigned &appendPageCount);
+    RC collectCounterValues(unsigned& readPageCount,
+                            unsigned& writePageCount,
+                            unsigned& appendPageCount);
 };
 
 #endif
