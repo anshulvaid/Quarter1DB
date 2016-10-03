@@ -43,10 +43,6 @@ RC PagedFileManager::destroyFile(const string& fileName) {
 
 
 RC PagedFileManager::openFile(const string& fileName, FileHandle& fileHandle) {
-    if (fileExists(fileName) && !fileHandle.hasOpenedFile()) {
-        return fileHandle.openFile(fileName);
-    }
-
     return -1;
 }
 
@@ -107,22 +103,4 @@ RC FileHandle::collectCounterValues(unsigned& readPageCount,
                                     unsigned& writePageCount,
                                     unsigned& appendPageCount) {
     return -1;
-}
-
-
-RC FileHandle::openFile(const string& fileName) {
-    if (!hasOpenedFile()) {
-        _fs.open(fileName);
-        if (_fs.good()) {
-            return 0;
-        }
-        _fs.close();
-    }
-
-    return -1;
-}
-
-
-bool FileHandle::hasOpenedFile() {
-    return _fs.is_open() && _fs.good();
 }

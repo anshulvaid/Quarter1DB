@@ -83,13 +83,6 @@ public:
                             unsigned& writePageCount,
                             unsigned& appendPageCount);
 
-    // Opens file and associates it the stream.
-    // Assumes the file already exists.
-    RC openFile(const string& fileName);
-
-    // Is associated with a file
-    bool hasOpenedFile();
-    
 
 private:
     fstream _fs;
