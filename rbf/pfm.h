@@ -8,27 +8,28 @@ typedef char byte;
 #define PAGE_SIZE 4096
 #include <string>
 #include <climits>
+#include <fstream>
 using namespace std;
 
 class FileHandle;
 
 class PagedFileManager
 {
-friend class PagedFileManagerTest;   // Allow access to test private methods
+friend class PagedFileManagerTest;   // Allows access to test private methods
 public:
     // Access to the _pf_manager instance
     static PagedFileManager* instance();
 
-    // Create a new file
+    // Creates a new file
     RC createFile    (const string& fileName);
 
-    // Destroy a file
+    // Destroys a file
     RC destroyFile   (const string& fileName);
 
-    //  Open a file
+    //  Opens a file
     RC openFile      (const string& fileName, FileHandle& fileHandle);
 
-    //  Close a file
+    //  Closes a file
     RC closeFile     (FileHandle& fileHandle);
 
 protected:
@@ -54,7 +55,7 @@ private:
 class FileHandle
 {
 public:
-    // variables to keep the counter for each operation
+    // Variables to keep the counter for each operation
     unsigned readPageCounter;
     unsigned writePageCounter;
     unsigned appendPageCounter;
@@ -65,22 +66,33 @@ public:
     // Destructor
     ~FileHandle();
 
-    // Get a specific page
+    // Gets a specific page
     RC readPage(PageNum pageNum, void *data);
 
-    // Write a specific page
+    // Writes a specific page
     RC writePage(PageNum pageNum, const void *data);
 
-    // Append a specific page
+    // Appends a specific page
     RC appendPage(const void *data);
 
-    // Get the number of pages in the file
+    // Gets the number of pages in the file
     unsigned getNumberOfPages();
 
-    // Put the current counter values into variables
+    // Puts the current counter values into variables
     RC collectCounterValues(unsigned& readPageCount,
                             unsigned& writePageCount,
                             unsigned& appendPageCount);
+
+    // Opens file and associates it the stream.
+    // Assumes the file already exists.
+    RC openFile(const string& fileName);
+
+    // Is associated with a file
+    bool hasOpenedFile();
+    
+
+private:
+    fstream _fs;
 };
 
 #endif
