@@ -1,5 +1,8 @@
-#include "pfm.h"
+#include <fstream>
 #include <sys/stat.h>
+#include <stdio.h>
+
+#include "pfm.h"
 
 PagedFileManager* PagedFileManager::_pf_manager = 0;
 
@@ -20,11 +23,21 @@ PagedFileManager::~PagedFileManager() {
 
 
 RC PagedFileManager::createFile(const string& fileName) {
+    if (!fileExists(fileName)) {
+        if (fstream(fileName, fstream::out)) {
+            return 0;
+        }
+    }
+
     return -1;
 }
 
 
 RC PagedFileManager::destroyFile(const string& fileName) {
+    if (fileExists(fileName)) {
+        return remove(fileName.c_str());
+    }
+
     return -1;
 }
 
