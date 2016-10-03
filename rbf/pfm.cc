@@ -55,10 +55,12 @@ RC PagedFileManager::closeFile(FileHandle& fileHandle) {
     return -1;
 }
 
+
 bool PagedFileManager::fileExists(const string& fileName) {
     struct stat buffer;
     return (stat (fileName.c_str(), &buffer) == 0);
 }
+
 
 void PagedFileManager::reset() {
     delete _pf_manager;
