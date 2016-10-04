@@ -98,7 +98,19 @@ public:
     bool isHandlingFile();
 
 private:
+    // Does the actual I/O operations to the disk
     fstream _fs;
+
+    // Current number of pages that the file has
+    unsigned _nPages;
+
+    // Sets the number of pages according to the file size.
+    // Assumes that the file handle is already handling a file.
+    unsigned calcNumberPages();
+
+    // Checks the file size.
+    // Assumes that the file handle is already handling a file.
+    long getFileSize();
 };
 
 #endif

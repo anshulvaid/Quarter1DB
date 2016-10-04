@@ -1,6 +1,8 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <math.h>
+#include <assert.h>
 
 #include "pfm.h"
 
@@ -102,7 +104,8 @@ RC FileHandle::appendPage(const void *data) {
 
 
 unsigned FileHandle::getNumberOfPages() {
-    return -1;
+    assert(isHandlingFile() && "File handle is not yet handling a file");
+    return _nPages;
 }
 
 
@@ -117,6 +120,7 @@ RC FileHandle::openFile(const string& fileName) {
     if (!isHandlingFile()) {
         _fs.open(fileName);
         if (_fs.good()) {
+            _nPages = calcNumberPages();
             return 0;
         }
         _fs.close();
@@ -139,3 +143,21 @@ bool FileHandle::isHandlingFile() {
     return _fs.is_open() && _fs.good();
 }
 
+
+unsigned FileHandle::calcNumberPages() {
+    assert(isHandlingFile() && "File handle is not yet handling a file");
+    return (unsigned) ceil(getFileSize() / PAGE_SIZE);
+}
+
+
+long FileHandle::getFileSize() {
+    assert(isHandlingFile() && "File handle is not yet handling a file");
+
+    long begin, end;
+    _fs.seekg(0, ios::beg);
+    begin = _fs.tellg();
+    _fs.seekg(0, ios::end);
+    end = _fs.tellg();
+
+    return end - begin;
+}
