@@ -52,6 +52,9 @@ RC PagedFileManager::openFile(const string& fileName, FileHandle& fileHandle) {
 
 
 RC PagedFileManager::closeFile(FileHandle& fileHandle) {
+    if(fileHandle.isHandlingFile()) {
+        return fileHandle.closeFile();
+    }
     return -1;
 }
 
@@ -120,6 +123,15 @@ RC FileHandle::openFile(const string& fileName) {
     }
 
     return -1;
+}
+
+
+RC FileHandle::closeFile() {
+    if (isHandlingFile()) {
+        _fs.close();
+    }
+
+    return 0;
 }
 
 

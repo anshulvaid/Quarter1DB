@@ -90,6 +90,10 @@ public:
     // Assumes the file already exists.
     RC openFile(const string& fileName);
 
+    // Closes its associated file if any.
+    // Flushes out any data that is still in memory.
+    RC closeFile();
+
     // Is associated with a file
     bool isHandlingFile();
 
