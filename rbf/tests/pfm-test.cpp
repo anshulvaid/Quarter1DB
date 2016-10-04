@@ -15,6 +15,8 @@ class PagedFileManagerTest {
 public:
     PagedFileManagerTest() {
         add_test(&PagedFileManagerTest::testFileExists);
+        add_test(&PagedFileManagerTest::testOpenFileWithSameFileHandle);
+        add_test(&PagedFileManagerTest::testOpenFileWithOtherFileHandle);
     }
 
     void test() {
@@ -51,6 +53,56 @@ private:
             remove(f.c_str());
             assert(!pfm->fileExists(f));
         }
+    }
+
+
+    void testOpenFileWithSameFileHandle(PagedFileManager* pfm) {
+        cout << "***** Testing 'testOpenFileWithSameFileHandle' *****" << endl;
+
+        RC rc;
+        string fileName = "example.txt";
+
+        rc = pfm->createFile(fileName);
+        assert(rc == 0 && pfm->fileExists(fileName) &&
+               "Creating the file should not fail.");
+
+        // Open the file
+        FileHandle fileHandle;
+        rc = pfm->openFile(fileName, fileHandle);
+        assert(rc == 0 && "Opening the file should not fail.");
+
+        // Open file with same file handle
+        rc = pfm->openFile(fileName, fileHandle);
+        assert(rc == -1 &&
+                "Opening the file with same handle should not fail.");
+
+        remove(fileName.c_str());
+    }
+
+    void testOpenFileWithOtherFileHandle(PagedFileManager* pfm) {
+        cout << "***** Testing 'testOpenFileWithOtherFileHandle' *****"
+             << endl;
+
+        RC rc;
+        string fileName = "example.txt";
+
+        rc = pfm->createFile(fileName);
+        assert(rc == 0 && pfm->fileExists(fileName) &&
+               "Creating the file should not fail.");
+
+
+        FileHandle fileHandle1, fileHandle2;
+
+        // Open the file
+        rc = pfm->openFile(fileName, fileHandle1);
+        assert(rc == 0 && "Opening the file should not fail.");
+
+        // Open file with same file handle
+        rc = pfm->openFile(fileName, fileHandle2);
+        assert(rc == 0 &&
+                "Opening the file with another handle should not fail.");
+
+        remove(fileName.c_str());
     }
 
     vector<function<void(PagedFileManagerTest*, PagedFileManager*)>> _tests;

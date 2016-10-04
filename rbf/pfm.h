@@ -9,6 +9,7 @@ typedef char byte;
 #include <string>
 #include <climits>
 #include <fstream>
+#include <functional>
 using namespace std;
 
 class FileHandle;
@@ -42,8 +43,10 @@ protected:
 private:
     static PagedFileManager *_pf_manager;
 
+
     // Checks if file exists on the given path (absolute or relative)
     bool fileExists(const string& fileName);
+
 
     // Resets the memory allocated for the static instance.
     // Only used for testing, to enable testing multiple features in the same
@@ -83,6 +86,12 @@ public:
                             unsigned& writePageCount,
                             unsigned& appendPageCount);
 
+    // Opens file and associates it the stream.
+    // Assumes the file already exists.
+    RC openFile(const string& fileName);
+
+    // Is associated with a file
+    bool isHandlingFile();
 
 private:
     fstream _fs;
