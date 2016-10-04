@@ -160,11 +160,11 @@ public:
 public:
 
 protected:
-  RecordBasedFileManager();
-  ~RecordBasedFileManager();
+    RecordBasedFileManager();
+    ~RecordBasedFileManager();
 
 private:
-  static RecordBasedFileManager *_rbf_manager;
+    static RecordBasedFileManager *_rbf_manager;
 };
 
 #endif
