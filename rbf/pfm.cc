@@ -89,6 +89,15 @@ FileHandle::~FileHandle() {
 
 
 RC FileHandle::readPage(PageNum pageNum, void *data) {
+    if (isHandlingFile()) {
+        if (pageNum < _nPages) {
+            _fs.seekg(pageNum * PAGE_SIZE);
+            _fs.read((char *) data, PAGE_SIZE);
+            readPageCounter++;
+            return 0;
+        }
+    }
+
     return -1;
 }
 
@@ -112,7 +121,10 @@ unsigned FileHandle::getNumberOfPages() {
 RC FileHandle::collectCounterValues(unsigned& readPageCount,
                                     unsigned& writePageCount,
                                     unsigned& appendPageCount) {
-    return -1;
+    readPageCount = readPageCounter;
+    writePageCount = writePageCounter;
+    appendPageCount = appendPageCounter;
+    return 0;
 }
 
 
