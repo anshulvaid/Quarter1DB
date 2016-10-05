@@ -165,6 +165,77 @@ protected:
 
 private:
     static RecordBasedFileManager *_rbf_manager;
+
+    // Reference to the paged file manager
+    PagedFileManager& _pfm;
 };
+
+
+class Page {
+public:
+    Page();
+    Page(char *data);
+
+    ~Page();
+
+    // Amount of free space in bytes
+    unsigned getFreeSpace();
+
+    // Number of slots in the page == number of records
+    unsigned getNumberSlots();
+
+    // void data* getRecord();
+    // getWritingStartPos();
+    // addSlot();
+    // getData();
+
+
+    // Reset page
+    void reset();
+
+    void setFreeSpaceOffset(unsigned offset);
+
+    void setNumberSlots(int n);
+
+    bool canStoreRecord(int size);
+
+    char *getFreeSpaceOffsetAddr();
+
+    char *getNumberSlotsAddr();
+
+    char *getNthByteAddr(int n);
+
+    char *getLastNthByteAddr(int n);
+
+    char *toByteArray(unsigned value);
+
+    unsigned fromByteArray(char *arr, size_t n);
+
+    // Write 'n' bytes from the memory address 'data' to the given
+    // destination address
+    void write(char *dest, char *data, size_t n);
+
+    // Return amount of free space in bytes
+    unsigned freeSpace();
+
+
+
+private:
+    char *_data;
+
+    // Auxiliar variable to store value of an unsigned as a byte array.
+    // This we avoid creating this temporary object every time we need one.
+    char _auxByteArray[sizeof(unsigned)];
+};
+
+
+// class Record {
+// public:
+//     getNullAttrs();
+//     getStartPos();
+//     getData();
+// private:
+//     void *data;
+// };
 
 #endif
