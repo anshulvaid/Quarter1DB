@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <vector>
-#include <numeric>
+#include <iostream>
 
 RecordBasedFileManager* RecordBasedFileManager::_rbf_manager = 0;
 
@@ -44,40 +44,44 @@ RC RecordBasedFileManager::insertRecord(
     RID& rid) {
 
 
-    // if getPage() {
+    RecordEncoder re((char *) data, recordDescriptor);
 
-    // }
-    // else {
-    //     Page p;
-    //     fileHandle.append(p.getData());
-    //     return insertRecord();
-    // }
+    Page *p = findPageToInsert(fileHandle, re.sizeAfterEncode());
+    if (p != NULL) {
+        // p
+        p->insertRecord(re);
+        delete p;
+        return 0;
+    }
+    else {
+        {
+            Page p;
+            fileHandle.appendPage(p.getData());
+        }
+        return insertRecord(fileHandle, recordDescriptor, data, rid);
+    }
 
- 
     return -1;
 }
 
-// Page* RecordBasedFileManager::getPage(FileHandle fileHandle, int nBytes) {
-//     unsigned nPages = fileHandle.getNumberOfPages();
-//     if (nPages > 0) {
-//         Page *p = new Page();
-//         // Start with the last page
-//         for (int i = nPages-1; i >= 0; --i) {
-//             if (fileHandle.readPage(i, data) != -1) {
-//                 if (p->freeSpace() >= nBytes) {
-//                     return p;
-//                 }
-//             }
-//         }
-//     }
+Page* RecordBasedFileManager::findPageToInsert(FileHandle& fileHandle,
+                                               int sizeRecord) {
+    unsigned nPages = fileHandle.getNumberOfPages();
+    if (nPages > 0) {
+        Page *p = new Page();
+        // Start with the last page
+        for (int i = nPages-1; i >= 0; --i) {
+            if (fileHandle.readPage(i, p->getData()) != -1) {
+                if (p->canStoreRecord(sizeRecord)) {
+                    return p;
+                }
+            }
+        }
+    }
 
-//     // Either there are no pages yet, or all of them are full
-//     return NULL;
-// }
-
-// void RecordBasedFileManager::createNewPage() {
-
-// }
+    // Either there are no pages yet, or all of them are full
+    return NULL;
+}
 
 RC RecordBasedFileManager::readRecord(
     FileHandle& fileHandle,
@@ -109,7 +113,7 @@ public:
         return _auxByteArray;
     }
 
-    static unsigned decode(char *arr, size_t n) {
+    static unsigned decode(const char *arr, size_t n) {
         unsigned res = 0;
         for (int i = 0; i < n; ++i) {
             res |= (arr[i] << i*8);
@@ -143,8 +147,11 @@ Page::~Page() {
 }
 
 unsigned Page::getFreeSpace() {
-    return getLastNthByteAddr(2 * (getNumberSlots() + 2) - 1)
-           - getFreeSpaceOffsetAddr();
+    return getLastSlotAddr() - getFreeSpaceAddr();
+}
+
+char *Page::getLastSlotAddr() {
+    return getLastNthByteAddr(2 * (getNumberSlots() + 2) - 1);
 }
 
 unsigned Page::getNumberSlots() {
@@ -155,15 +162,38 @@ bool Page::canStoreRecord(int size) {
     return getFreeSpace() >= size + 2;
 }
 
-// Private functions
 
 void Page::reset() {
     setFreeSpaceOffset(0);
     setNumberSlots(0);
 }
 
+char *Page::getFreeSpaceAddr() {
+    return _data + getFreeSpaceOffset();
+}
+
+void Page::insertRecord(const RecordEncoder& re) {
+    char *freeSpaceAddr = getFreeSpaceAddr();
+    re.encode(freeSpaceAddr);
+    insertSlot(getFreeSpaceOffset());
+    setFreeSpaceOffset(getFreeSpaceOffset() + re.sizeAfterEncode());
+}
+
+
+// Private functions
+void Page::insertSlot(unsigned recordOffset) {
+    write(getLastSlotAddr() - 2, ByteArray::encode(recordOffset), 2);
+    setNumberSlots(getNumberSlots() + 1);
+
+    //
+}
+
 void Page::setFreeSpaceOffset(unsigned offset) {
     write(getFreeSpaceOffsetAddr(), ByteArray::encode(offset), 2);
+}
+
+unsigned Page::getFreeSpaceOffset() {
+    return ByteArray::decode(getFreeSpaceOffsetAddr(), 2);
 }
 
 void Page::setNumberSlots(int n) {
@@ -190,6 +220,10 @@ void Page::write(char *dst, char *data, size_t n) {
     memcpy(dst, data, n);
 }
 
+char *Page::getData() {
+    return _data;
+}
+
 unsigned Page::freeSpace() {
     return -1;
 }
@@ -200,77 +234,72 @@ unsigned Page::freeSpace() {
 /// Class RecordEncoder
 ////////////////////////////////////////////////////////////////////////////
 
-class RecordEncoder {
-public:
-    RecordEncoder(char *data, const vector<Attribute>& attrs)
-    : _data(data), _attrs(attrs) {
-    }
+RecordEncoder::RecordEncoder(const char *data, const vector<Attribute>& attrs)
+: _data(data), _attrs(attrs) {
+    calcAttrsSizes(_data + calcNullsIndicatorSize());
+
+}
 
 
-    // Returns the number of bytes written
-    void encode(char *dst) {
-        vector<unsigned> attrsSizes = getAttrsSizes(_data
-                                                + calcNullsIndicatorSize());
-        dst += encodeHeader(dst, attrsSizes);
-        dst += encodeBody(dst, attrsSizes);
-    }
+void RecordEncoder::encode(char *dst) const {
+    dst += encodeHeader(dst);
+    dst += encodeBody(dst);
+}
 
-    // Returns the number of bytes written
-    unsigned encodeHeader(char *dst, const vector<unsigned>& attrsSizes) {
-        unsigned nAttrs = _attrs.size();
-        unsigned offset = 2 * nAttrs;
-        int i;
-        for (i = 0; i < nAttrs; ++i) {
-            memcpy(dst + 2 * i, ByteArray::encode( isNull(i) ? 0 : offset), 2);
-            offset += attrsSizes[i];
-        }
-        return 2 * i;
+// Returns the number of bytes written
+unsigned RecordEncoder::encodeHeader(char *dst) const {
+    unsigned nAttrs = _attrs.size();
+    unsigned offset = 2 * nAttrs;
+    int i;
+    for (i = 0; i < nAttrs; ++i) {
+        memcpy(dst + 2 * i, ByteArray::encode( isNull(i) ? 0 : offset), 2);
+        offset += _attrsSizes[0];
     }
+    return 2 * i;
+}
 
-    // Returns the number of bytes written
-    unsigned encodeBody(char *dst, const vector<unsigned>& attrsSizes) {
-        unsigned size = std::accumulate(attrsSizes.begin(),
-                                        attrsSizes.end(), 0);
-        memcpy(dst, _data + calcNullsIndicatorSize(), size);
-        return size;
-    }
+// Returns the number of bytes written
+unsigned RecordEncoder::encodeBody(char *dst) const {
+    memcpy(dst, _data + calcNullsIndicatorSize(), _totalAttrsSizes);
+    return _totalAttrsSizes;
+}
 
-    bool isNull(int n) {
-        int byteOffset = n / 8;
-        return (_data[byteOffset] & (1 << (8 - (n % 8) - 1))) != 0;
-    }
+unsigned RecordEncoder::sizeAfterEncode() const {
+    return 2 + _attrs.size() + _totalAttrsSizes;
+}
 
-    unsigned calcNullsIndicatorSize() {
-        return ceil((double) _attrs.size() / 8);
-    }
+bool RecordEncoder::isNull(int n) const {
+    int byteOffset = n / 8;
+    return (_data[byteOffset] & (1 << (8 - (n % 8) - 1))) != 0;
+}
 
-    vector<unsigned> getAttrsSizes(char *attrsData) {
-        vector<unsigned> sizes(_attrs.size());
-        char *it = attrsData;
-        int i = 0;
-        for(auto& s: sizes) {
-            s = calcSizeAttrValue(i++, it);
-            it += s;
-        }
-        return sizes;
-    }
+unsigned RecordEncoder::calcNullsIndicatorSize() const {
+    return ceil((double) _attrs.size() / 8);
+}
 
-    unsigned calcSizeAttrValue(int n, char *itAttr) {
-        unsigned size;
-        switch (_attrs[n].type) {
-            case TypeInt:
-                size = _attrs[n].length;
-                break;
-            case TypeReal:
-                size = _attrs[n].length;
-                break;
-            case TypeVarChar:
-                size = ByteArray::decode(itAttr, 4) + 4;
-                break;
-        }
-        return size;
+void RecordEncoder::calcAttrsSizes(const char *attrsData) {
+    _attrsSizes = vector<unsigned>(_attrs.size());
+    const char *it = attrsData;
+    int i = 0; _totalAttrsSizes = 0;
+    for(auto& s: _attrsSizes) {
+        s = calcSizeAttrValue(i++, it);
+        it += s;
+        _totalAttrsSizes += s;
     }
-private:
-    char *_data;
-    const vector<Attribute>& _attrs;
-};
+}
+
+unsigned RecordEncoder::calcSizeAttrValue(int n, const char *itAttr) {
+    unsigned size;
+    switch (_attrs[n].type) {
+        case TypeInt:
+            size = _attrs[n].length;
+            break;
+        case TypeReal:
+            size = _attrs[n].length;
+            break;
+        case TypeVarChar:
+            size = ByteArray::decode(itAttr, 4) + 4;
+            break;
+    }
+    return size;
+}

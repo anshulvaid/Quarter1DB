@@ -68,6 +68,7 @@ public:
     RC close() { return -1; };
 };
 
+class Page;
 
 class RecordBasedFileManager
 {
@@ -108,6 +109,8 @@ public:
                     const vector<Attribute>& recordDescriptor,
                     const void *data,
                     RID& rid);
+
+    Page* findPageToInsert(FileHandle& fileHandle, int sizeRecord);
 
     RC readRecord(FileHandle& fileHandle,
                   const vector<Attribute>& recordDescriptor,
@@ -171,6 +174,39 @@ private:
 };
 
 
+
+
+
+class RecordEncoder {
+public:
+    RecordEncoder(const char *data, const vector<Attribute>& attrs);
+
+
+    void encode(char *dst) const;
+
+    // Returns the number of bytes written
+    unsigned encodeHeader(char *dst) const;
+
+    // Returns the number of bytes written
+    unsigned encodeBody(char *dst) const;
+
+    unsigned sizeAfterEncode() const;
+
+    bool isNull(int n) const;
+
+    unsigned calcNullsIndicatorSize() const;
+
+    void calcAttrsSizes(const char *attrsData);
+
+    unsigned calcSizeAttrValue(int n, const char *itAttr);
+private:
+    const char *_data;
+    const vector<Attribute>& _attrs;
+    vector<unsigned> _attrsSizes;
+    unsigned _totalAttrsSizes;
+};
+
+
 class Page {
 public:
     Page();
@@ -184,22 +220,37 @@ public:
     // Number of slots in the page == number of records
     unsigned getNumberSlots();
 
+    void insertRecord(const RecordEncoder& re);
+
+    void insertSlot(unsigned recordOffset);
+
+
     // void data* getRecord();
     // getWritingStartPos();
     // addSlot();
     // getData();
 
+    char *getData();
 
     // Reset page format. Clears all data
     void reset();
 
     void setFreeSpaceOffset(unsigned offset);
 
+    char *getLastSlotAddr();
+
+
     void setNumberSlots(int n);
+
 
     bool canStoreRecord(int size);
 
     char *getFreeSpaceOffsetAddr();
+
+    char *getFreeSpaceAddr();
+
+    unsigned getFreeSpaceOffset();
+
 
     char *getNumberSlotsAddr();
 
@@ -227,52 +278,6 @@ private:
     // This we avoid creating this temporary object every time we need one.
     char _auxByteArray[sizeof(unsigned)];
 };
-
-
-
-class RecordSection {
-public:
-    RecordSection(char *data, size_t size);
-private:
-    char *_data;
-    size_t _size;  // in bytes
-};
-
-
-
-
-// class Record {
-// public:
-//     Record(char *data, const vector<Attribute>& fields);
-
-//     // void serialize(char *dst);
-
-// //     getNullAttrs();
-// //     getStartPos();
-// //     getData();
-// private:
-//     char *_data;
-
-//     // Reference to list of attributes/fields
-//     const vector<Attribute>& _fields;
-
-//     RecordSection nullsIndicator;
-
-//     // Returns the size of the null field indicator in bytes
-//     unsigned calcNullsIndicatorSize();
-
-//     // // Returns the size of the record raw data in bytes
-//     // unsigned calcSize();
-
-//     // // Writes the section of field pointers to the given address.
-//     // // Format: N consecutive pointers (eac 2 bytes long), if N is the number
-//     // // of non-null fields.
-//     // // Returns the number bytes written to the given memory address.
-//     // unsigned createFieldPointers(char *outFieldPointers);
-
-// };
-
-
 
 
 #endif
