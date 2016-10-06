@@ -110,7 +110,9 @@ public:
                     const void *data,
                     RID& rid);
 
-    Page* findPageToInsert(FileHandle& fileHandle, int sizeRecord);
+    Page* findPageToInsert(FileHandle& fileHandle,
+                           int sizeRecord,
+                           int *pageNum);
 
     RC readRecord(FileHandle& fileHandle,
                   const vector<Attribute>& recordDescriptor,
@@ -207,6 +209,25 @@ private:
 };
 
 
+class RecordDecoder{
+public:
+    RecordDecoder(char *data, unsigned size,
+                  const vector<Attribute>& recordDescriptor);
+
+    void decode(char *dst);
+private:
+    char *_data;
+    unsigned _size;
+    const vector<Attribute>& _attrs;
+
+    unsigned decodeHeader(char *dst);
+    unsigned decodeNullsIndicator(char *dst,
+                                  const vector<bool>& nullsIndicator);
+    unsigned decodeBody(char *dst);
+
+};
+
+
 class Page {
 public:
     Page();
@@ -220,9 +241,20 @@ public:
     // Number of slots in the page == number of records
     unsigned getNumberSlots();
 
-    void insertRecord(const RecordEncoder& re);
+    unsigned insertRecord(const RecordEncoder& re);
 
-    void insertSlot(unsigned recordOffset);
+    void insertSlot(unsigned recordOffset, unsigned recordSize);
+
+    RC getRecord(unsigned slotNum, char **recordAddr, unsigned *recordSize);
+
+    char *getRecordAddr(unsigned slotNum);
+
+    unsigned getRecordSize(unsigned slotNum);
+
+    unsigned getRecordOffset(unsigned slotNum);
+
+    char *getNthSlotAddr(unsigned slotNum);
+
 
 
     // void data* getRecord();

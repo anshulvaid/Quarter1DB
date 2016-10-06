@@ -1,8 +1,8 @@
 1. Basic information
-Student ID : 
-Student Name : 
-OS (bit) :
-gcc version :
+Student ID : 23201116
+Student Name : Pedro Matias
+OS (bit) : 64bits
+gcc version : 
 
 
 2. Internal Record Format

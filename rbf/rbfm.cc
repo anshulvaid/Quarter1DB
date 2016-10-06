@@ -46,10 +46,11 @@ RC RecordBasedFileManager::insertRecord(
 
     RecordEncoder re((char *) data, recordDescriptor);
 
-    Page *p = findPageToInsert(fileHandle, re.sizeAfterEncode());
+    int pageNum;
+    Page *p = findPageToInsert(fileHandle, re.sizeAfterEncode(), &pageNum);
     if (p != NULL) {
-        // p
-        p->insertRecord(re);
+        rid.pageNum = pageNum;
+        rid.slotNum = p->insertRecord(re);
         delete p;
         return 0;
     }
@@ -65,7 +66,8 @@ RC RecordBasedFileManager::insertRecord(
 }
 
 Page* RecordBasedFileManager::findPageToInsert(FileHandle& fileHandle,
-                                               int sizeRecord) {
+                                               int sizeRecord,
+                                               int *pageNum) {
     unsigned nPages = fileHandle.getNumberOfPages();
     if (nPages > 0) {
         Page *p = new Page();
@@ -73,6 +75,7 @@ Page* RecordBasedFileManager::findPageToInsert(FileHandle& fileHandle,
         for (int i = nPages-1; i >= 0; --i) {
             if (fileHandle.readPage(i, p->getData()) != -1) {
                 if (p->canStoreRecord(sizeRecord)) {
+                    *pageNum = i;
                     return p;
                 }
             }
@@ -88,6 +91,19 @@ RC RecordBasedFileManager::readRecord(
     const vector<Attribute>& recordDescriptor,
     const RID& rid,
     void *data) {
+
+    Page p;
+
+    if (fileHandle.readPage(rid.pageNum, p.getData()) != -1) {
+        char *recordAddr;
+        unsigned recordSize;
+        if (p.getRecord(rid.slotNum, &recordAddr, &recordSize) != -1) {
+            RecordDecoder rd(recordAddr, recordSize, recordDescriptor);
+            rd.decode((char *) data);
+            return 0;
+        }
+    }
+
     return -1;
 }
 
@@ -151,7 +167,7 @@ unsigned Page::getFreeSpace() {
 }
 
 char *Page::getLastSlotAddr() {
-    return getLastNthByteAddr(2 * (getNumberSlots() + 2) - 1);
+    return getLastNthByteAddr(4 + 4 * getNumberSlots() - 1);
 }
 
 unsigned Page::getNumberSlots() {
@@ -159,7 +175,7 @@ unsigned Page::getNumberSlots() {
 }
 
 bool Page::canStoreRecord(int size) {
-    return getFreeSpace() >= size + 2;
+    return getFreeSpace() >= size + 4;
 }
 
 
@@ -172,17 +188,45 @@ char *Page::getFreeSpaceAddr() {
     return _data + getFreeSpaceOffset();
 }
 
-void Page::insertRecord(const RecordEncoder& re) {
+unsigned Page::insertRecord(const RecordEncoder& re) {
     char *freeSpaceAddr = getFreeSpaceAddr();
     re.encode(freeSpaceAddr);
-    insertSlot(getFreeSpaceOffset());
+    insertSlot(getFreeSpaceOffset(), re.sizeAfterEncode());
     setFreeSpaceOffset(getFreeSpaceOffset() + re.sizeAfterEncode());
+    return getNumberSlots();
+}
+
+RC Page::getRecord(unsigned slotNum, char **recordAddr, unsigned *recordSize){
+    if (getNumberSlots() >= slotNum) {
+        *recordAddr = getRecordAddr(slotNum);
+        *recordSize = getRecordSize(slotNum);
+        return 0;
+    }
+
+    return -1;
+}
+
+char *Page::getRecordAddr(unsigned slotNum) {
+    return _data + getRecordOffset(slotNum);
+}
+
+unsigned Page::getRecordSize(unsigned slotNum) {
+    return ByteArray::decode(getNthSlotAddr(slotNum) + 2, 2);
+}
+
+unsigned Page::getRecordOffset(unsigned slotNum) {
+    return ByteArray::decode(getNthSlotAddr(slotNum), 2);
+}
+
+char *Page::getNthSlotAddr(unsigned slotNum) {
+    return getLastNthByteAddr(slotNum * 4 + 3);
 }
 
 
 // Private functions
-void Page::insertSlot(unsigned recordOffset) {
-    write(getLastSlotAddr() - 2, ByteArray::encode(recordOffset), 2);
+void Page::insertSlot(unsigned recordOffset, unsigned recordSize) {
+    write(getLastSlotAddr() - 4, ByteArray::encode(recordOffset), 2);
+    write(getLastSlotAddr() - 2, ByteArray::encode(recordSize), 2);
     setNumberSlots(getNumberSlots() + 1);
 
     //
@@ -302,4 +346,65 @@ unsigned RecordEncoder::calcSizeAttrValue(int n, const char *itAttr) {
             break;
     }
     return size;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////
+/// Class RecordDecoder
+////////////////////////////////////////////////////////////////////////////
+
+RecordDecoder::RecordDecoder(char *data, unsigned size,
+                             const vector<Attribute>& recordDescriptor)
+        : _data(data),
+          _size(size),
+          _attrs(recordDescriptor){
+
+}
+
+void RecordDecoder::decode(char *dst) {
+    dst += decodeHeader(dst);
+    dst += decodeBody(dst);
+}
+
+unsigned RecordDecoder::decodeHeader(char *dst) {
+    vector<bool> nullsIndicator(_attrs.size());
+    for (int i = 0; i < _attrs.size(); ++i) {
+        unsigned attrOffset = ByteArray::decode(_data + 2 * i, 2);
+        nullsIndicator[i] = (attrOffset == 0);
+    }
+
+    return decodeNullsIndicator(dst, nullsIndicator);
+}
+
+unsigned RecordDecoder::decodeNullsIndicator(char *dst,
+                                        const vector<bool>& nullsIndicator) {
+    byte b, mask;
+    char *writePos = dst;
+    for (int i = 0; i < _attrs.size(); ++i) {
+        if (i % 8 == 0) {
+            mask = 0x80;
+            b = 0;
+
+            if (i != 0) {
+                *writePos++ = b;
+            }
+        }
+
+        if (nullsIndicator[i]) {
+            b |= mask;
+        }
+        mask >>= 1;
+    }
+
+    return writePos - dst;
+}
+
+
+unsigned RecordDecoder::decodeBody(char *dst) {
+    unsigned headerSize = 2 * _attrs.size();
+    unsigned bodySize = _size - headerSize;
+    memcpy(dst, _data + headerSize, bodySize);
+    return bodySize;
 }
