@@ -190,7 +190,7 @@ public:
     // getData();
 
 
-    // Reset page
+    // Reset page format. Clears all data
     void reset();
 
     void setFreeSpaceOffset(unsigned offset);
@@ -213,7 +213,7 @@ public:
 
     // Write 'n' bytes from the memory address 'data' to the given
     // destination address
-    void write(char *dest, char *data, size_t n);
+    void write(char *dst, char *data, size_t n);
 
     // Return amount of free space in bytes
     unsigned freeSpace();
@@ -229,13 +229,50 @@ private:
 };
 
 
+
+class RecordSection {
+public:
+    RecordSection(char *data, size_t size);
+private:
+    char *_data;
+    size_t _size;  // in bytes
+};
+
+
+
+
 // class Record {
 // public:
-//     getNullAttrs();
-//     getStartPos();
-//     getData();
+//     Record(char *data, const vector<Attribute>& fields);
+
+//     // void serialize(char *dst);
+
+// //     getNullAttrs();
+// //     getStartPos();
+// //     getData();
 // private:
-//     void *data;
+//     char *_data;
+
+//     // Reference to list of attributes/fields
+//     const vector<Attribute>& _fields;
+
+//     RecordSection nullsIndicator;
+
+//     // Returns the size of the null field indicator in bytes
+//     unsigned calcNullsIndicatorSize();
+
+//     // // Returns the size of the record raw data in bytes
+//     // unsigned calcSize();
+
+//     // // Writes the section of field pointers to the given address.
+//     // // Format: N consecutive pointers (eac 2 bytes long), if N is the number
+//     // // of non-null fields.
+//     // // Returns the number bytes written to the given memory address.
+//     // unsigned createFieldPointers(char *outFieldPointers);
+
 // };
+
+
+
 
 #endif

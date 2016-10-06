@@ -1,5 +1,8 @@
 #include "rbfm.h"
 #include <string.h>
+#include <math.h>
+#include <vector>
+#include <numeric>
 
 RecordBasedFileManager* RecordBasedFileManager::_rbf_manager = 0;
 
@@ -91,6 +94,37 @@ RC RecordBasedFileManager::printRecord(
 }
 
 
+////////////////////////////////////////////////////////////////////////////
+/// Class ByteArray
+////////////////////////////////////////////////////////////////////////////
+
+
+class ByteArray {
+public:
+    static char *encode(unsigned value) {
+        for (int i = 0; i < sizeof(value); ++i) {
+            _auxByteArray[i] = value & 0xFF;
+            value >>= 8;
+        }
+        return _auxByteArray;
+    }
+
+    static unsigned decode(char *arr, size_t n) {
+        unsigned res = 0;
+        for (int i = 0; i < n; ++i) {
+            res |= (arr[i] << i*8);
+        }
+        return res;
+    }
+
+    static char _auxByteArray[sizeof(unsigned)];
+};
+
+char ByteArray::_auxByteArray[sizeof(unsigned)];
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////
 /// Class Page
@@ -114,7 +148,7 @@ unsigned Page::getFreeSpace() {
 }
 
 unsigned Page::getNumberSlots() {
-    return fromByteArray(getLastNthByteAddr(3), 2);
+    return ByteArray::decode(getLastNthByteAddr(3), 2);
 }
 
 bool Page::canStoreRecord(int size) {
@@ -129,11 +163,11 @@ void Page::reset() {
 }
 
 void Page::setFreeSpaceOffset(unsigned offset) {
-    write(getFreeSpaceOffsetAddr(), toByteArray(offset), 2);
+    write(getFreeSpaceOffsetAddr(), ByteArray::encode(offset), 2);
 }
 
 void Page::setNumberSlots(int n) {
-    write(getNumberSlotsAddr(), toByteArray(n), 2);
+    write(getNumberSlotsAddr(), ByteArray::encode(n), 2);
 }
 
 char *Page::getFreeSpaceOffsetAddr() {
@@ -152,24 +186,8 @@ char *Page::getLastNthByteAddr(int n) {
     return _data + PAGE_SIZE - 1 - n;
 }
 
-char *Page::toByteArray(unsigned value) {
-    for (int i = 0; i < sizeof(_auxByteArray); ++i) {
-        _auxByteArray[i] = value & 0xFF;
-        value >>= 8;
-    }
-    return _auxByteArray;
-}
-
-unsigned Page::fromByteArray(char *arr, size_t n) {
-    unsigned res = 0;
-    for (int i = 0; i < n; ++i) {
-        res |= (arr[i] << i*8);
-    }
-    return res;
-}
-
-void Page::write(char *dest, char *data, size_t n) {
-    memcpy(dest, data, n);
+void Page::write(char *dst, char *data, size_t n) {
+    memcpy(dst, data, n);
 }
 
 unsigned Page::freeSpace() {
@@ -179,6 +197,80 @@ unsigned Page::freeSpace() {
 
 
 ////////////////////////////////////////////////////////////////////////////
-/// Class Record
+/// Class RecordEncoder
 ////////////////////////////////////////////////////////////////////////////
 
+class RecordEncoder {
+public:
+    RecordEncoder(char *data, const vector<Attribute>& attrs)
+    : _data(data), _attrs(attrs) {
+    }
+
+
+    // Returns the number of bytes written
+    void encode(char *dst) {
+        vector<unsigned> attrsSizes = getAttrsSizes(_data
+                                                + calcNullsIndicatorSize());
+        dst += encodeHeader(dst, attrsSizes);
+        dst += encodeBody(dst, attrsSizes);
+    }
+
+    // Returns the number of bytes written
+    unsigned encodeHeader(char *dst, const vector<unsigned>& attrsSizes) {
+        unsigned nAttrs = _attrs.size();
+        unsigned offset = 2 * nAttrs;
+        int i;
+        for (i = 0; i < nAttrs; ++i) {
+            memcpy(dst + 2 * i, ByteArray::encode( isNull(i) ? 0 : offset), 2);
+            offset += attrsSizes[i];
+        }
+        return 2 * i;
+    }
+
+    // Returns the number of bytes written
+    unsigned encodeBody(char *dst, const vector<unsigned>& attrsSizes) {
+        unsigned size = std::accumulate(attrsSizes.begin(),
+                                        attrsSizes.end(), 0);
+        memcpy(dst, _data + calcNullsIndicatorSize(), size);
+        return size;
+    }
+
+    bool isNull(int n) {
+        int byteOffset = n / 8;
+        return (_data[byteOffset] & (1 << (8 - (n % 8) - 1))) != 0;
+    }
+
+    unsigned calcNullsIndicatorSize() {
+        return ceil((double) _attrs.size() / 8);
+    }
+
+    vector<unsigned> getAttrsSizes(char *attrsData) {
+        vector<unsigned> sizes(_attrs.size());
+        char *it = attrsData;
+        int i = 0;
+        for(auto& s: sizes) {
+            s = calcSizeAttrValue(i++, it);
+            it += s;
+        }
+        return sizes;
+    }
+
+    unsigned calcSizeAttrValue(int n, char *itAttr) {
+        unsigned size;
+        switch (_attrs[n].type) {
+            case TypeInt:
+                size = _attrs[n].length;
+                break;
+            case TypeReal:
+                size = _attrs[n].length;
+                break;
+            case TypeVarChar:
+                size = ByteArray::decode(itAttr, 4) + 4;
+                break;
+        }
+        return size;
+    }
+private:
+    char *_data;
+    const vector<Attribute>& _attrs;
+};

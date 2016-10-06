@@ -172,7 +172,7 @@ bool FileHandle::isHandlingFile() {
 
 unsigned FileHandle::calcNumberPages() {
     assert(isHandlingFile() && "File handle is not yet handling a file");
-    return (unsigned) ceil(getFileSize() / PAGE_SIZE);
+    return (unsigned) ceil( (double) getFileSize() / PAGE_SIZE);
 }
 
 
