@@ -107,6 +107,7 @@ RC FileHandle::writePage(PageNum pageNum, const void *data) {
         if (pageNum < _nPages) {
             _fs.seekg(pageNum * PAGE_SIZE);
             _fs.write((char *) data, PAGE_SIZE);
+            _fs.flush();
             writePageCounter++;
             return 0;
         }
