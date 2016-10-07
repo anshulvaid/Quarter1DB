@@ -5,7 +5,8 @@
 #include <vector>
 #include <climits>
 
-#include "../rbf/pfm.h"
+#include "pfm.h"
+#include "Page.h"
 
 using namespace std;
 
@@ -68,7 +69,6 @@ public:
     RC close() { return -1; };
 };
 
-class Page;
 
 class RecordBasedFileManager
 {
@@ -174,142 +174,5 @@ private:
     // Reference to the paged file manager
     PagedFileManager& _pfm;
 };
-
-
-
-
-
-class RecordEncoder {
-public:
-    RecordEncoder(const char *data, const vector<Attribute>& attrs);
-
-
-    void encode(char *dst) const;
-
-    // Returns the number of bytes written
-    unsigned encodeHeader(char *dst) const;
-
-    // Returns the number of bytes written
-    unsigned encodeBody(char *dst) const;
-
-    unsigned sizeAfterEncode() const;
-
-    bool isNull(int n) const;
-
-    unsigned calcNullsIndicatorSize() const;
-
-    void calcAttrsSizes(const char *attrsData);
-
-    unsigned calcSizeAttrValue(int n, const char *itAttr);
-private:
-    const char *_data;
-    const vector<Attribute>& _attrs;
-    vector<unsigned> _attrsSizes;
-    unsigned _totalAttrsSizes;
-};
-
-
-class RecordDecoder{
-public:
-    RecordDecoder(char *data, unsigned size,
-                  const vector<Attribute>& recordDescriptor);
-
-    void decode(char *dst);
-private:
-    char *_data;
-    unsigned _size;
-    const vector<Attribute>& _attrs;
-
-    unsigned decodeHeader(char *dst);
-    unsigned decodeNullsIndicator(char *dst,
-                                  const vector<bool>& nullsIndicator);
-    unsigned decodeBody(char *dst);
-
-};
-
-
-class Page {
-public:
-    Page();
-    Page(char *data);
-
-    ~Page();
-
-    // Amount of free space in bytes
-    unsigned getFreeSpace();
-
-    // Number of slots in the page == number of records
-    unsigned getNumberSlots();
-
-    unsigned insertRecord(const RecordEncoder& re);
-
-    void insertSlot(unsigned recordOffset, unsigned recordSize);
-
-    RC getRecord(unsigned slotNum, char **recordAddr, unsigned *recordSize);
-
-    char *getRecordAddr(unsigned slotNum);
-
-    unsigned getRecordSize(unsigned slotNum);
-
-    unsigned getRecordOffset(unsigned slotNum);
-
-    char *getNthSlotAddr(unsigned slotNum);
-
-
-
-    // void data* getRecord();
-    // getWritingStartPos();
-    // addSlot();
-    // getData();
-
-    char *getData();
-
-    // Reset page format. Clears all data
-    void reset();
-
-    void setFreeSpaceOffset(unsigned offset);
-
-    char *getLastSlotAddr();
-
-
-    void setNumberSlots(int n);
-
-
-    bool canStoreRecord(int size);
-
-    char *getFreeSpaceOffsetAddr();
-
-    char *getFreeSpaceAddr();
-
-    unsigned getFreeSpaceOffset();
-
-
-    char *getNumberSlotsAddr();
-
-    char *getNthByteAddr(int n);
-
-    char *getLastNthByteAddr(int n);
-
-    char *toByteArray(unsigned value);
-
-    unsigned fromByteArray(char *arr, size_t n);
-
-    // Write 'n' bytes from the memory address 'data' to the given
-    // destination address
-    void write(char *dst, char *data, size_t n);
-
-    // Return amount of free space in bytes
-    unsigned freeSpace();
-
-
-
-private:
-    char *_data;
-
-    // Auxiliar variable to store value of an unsigned as a byte array.
-    // This we avoid creating this temporary object every time we need one.
-    char _auxByteArray[sizeof(unsigned)];
-};
-
 
 #endif
