@@ -3,15 +3,15 @@
 
 class RecordEncoder {
 public:
-    RecordEncoder(const char *data, const vector<Attribute>& attrs);
+    RecordEncoder(const byte *data, const vector<Attribute>& attrs);
 
-    void encode(char *dst) const;
-
-    // Returns the number of bytes written
-    unsigned encodeHeader(char *dst) const;
+    void encode(byte *dst) const;
 
     // Returns the number of bytes written
-    unsigned encodeBody(char *dst) const;
+    unsigned encodeHeader(byte *dst) const;
+
+    // Returns the number of bytes written
+    unsigned encodeBody(byte *dst) const;
 
     unsigned sizeAfterEncode() const;
 
@@ -19,11 +19,11 @@ public:
 
     unsigned calcNullsIndicatorSize() const;
 
-    void calcAttrsSizes(const char *attrsData);
+    void calcAttrsSizes(const byte *attrsData);
 
-    unsigned calcSizeAttrValue(int n, const char *itAttr);
+    unsigned calcSizeAttrValue(int n, const byte *itAttr);
 private:
-    const char *_data;
+    const byte *_data;
     const vector<Attribute>& _attrs;
     vector<unsigned> _attrsSizes;
     unsigned _totalAttrsSizes;

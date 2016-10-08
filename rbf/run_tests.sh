@@ -2,10 +2,13 @@
 
 
 for i in {1..12}; do
-    ./rbftest$i
+    ./rbftest$i 2> /dev/null
     if [ $? -ne 0 ]; then
         exit $?
     fi
-done
 
-./rbftest8b
+    if [[ $i -eq 8 ]]; then
+        ./rbftest${i}b 2> /dev/null
+    fi
+
+done

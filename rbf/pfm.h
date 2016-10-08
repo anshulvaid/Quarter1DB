@@ -3,7 +3,7 @@
 
 typedef unsigned PageNum;
 typedef int RC;
-typedef char byte;
+typedef unsigned char byte;
 
 #define PAGE_SIZE 4096
 #include <string>

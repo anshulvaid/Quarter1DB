@@ -6,39 +6,49 @@
 #ifndef _recordEncoder_cc_
 #define _recordEncoder_cc_
 
+#include "utils.h"
+#ifndef LOG   // avoid overwriting definition
+    #define LOG(msg) __LOG__("RecordEncoder", msg)
+#endif
 
 
-RecordEncoder::RecordEncoder(const char *data, const vector<Attribute>& attrs)
+RecordEncoder::RecordEncoder(const byte *data, const vector<Attribute>& attrs)
 : _data(data), _attrs(attrs) {
     calcAttrsSizes(_data + calcNullsIndicatorSize());
 
 }
 
-void RecordEncoder::encode(char *dst) const {
+void RecordEncoder::encode(byte *dst) const {
+    LOG("Encoding record to address " << (void *) dst);
     dst += encodeHeader(dst);
     dst += encodeBody(dst);
 }
 
 // Returns the number of bytes written
-unsigned RecordEncoder::encodeHeader(char *dst) const {
+unsigned RecordEncoder::encodeHeader(byte *dst) const {
+    LOG("Encoding record header to address " << (void *) dst);
+
     unsigned nAttrs = _attrs.size();
     unsigned offset = 2 * nAttrs;
     int i;
     for (i = 0; i < nAttrs; ++i) {
+        LOG("Encoding attribute " << i << (isNull(i) ? "(NULL)" : "") << " to address "
+                << (void *) (dst + 2 * i));
         memcpy(dst + 2 * i, ByteArray::encode( isNull(i) ? 0 : offset), 2);
-        offset += _attrsSizes[0];
+        LOG("Offset of attribute " << i << " is " << offset);
+        offset += _attrsSizes[i];
     }
     return 2 * i;
 }
 
 // Returns the number of bytes written
-unsigned RecordEncoder::encodeBody(char *dst) const {
+unsigned RecordEncoder::encodeBody(byte *dst) const {
     memcpy(dst, _data + calcNullsIndicatorSize(), _totalAttrsSizes);
     return _totalAttrsSizes;
 }
 
 unsigned RecordEncoder::sizeAfterEncode() const {
-    return 2 + _attrs.size() + _totalAttrsSizes;
+    return 2 * _attrs.size() + _totalAttrsSizes;
 }
 
 bool RecordEncoder::isNull(int n) const {
@@ -50,18 +60,19 @@ unsigned RecordEncoder::calcNullsIndicatorSize() const {
     return ceil((double) _attrs.size() / 8);
 }
 
-void RecordEncoder::calcAttrsSizes(const char *attrsData) {
+void RecordEncoder::calcAttrsSizes(const byte *attrsData) {
     _attrsSizes = vector<unsigned>(_attrs.size());
-    const char *it = attrsData;
+    const byte *it = attrsData;
     int i = 0; _totalAttrsSizes = 0;
     for(auto& s: _attrsSizes) {
         s = calcSizeAttrValue(i++, it);
         it += s;
         _totalAttrsSizes += s;
     }
+    LOG("The total size of attributes values is " << _totalAttrsSizes);
 }
 
-unsigned RecordEncoder::calcSizeAttrValue(int n, const char *itAttr) {
+unsigned RecordEncoder::calcSizeAttrValue(int n, const byte *itAttr) {
     unsigned size;
     switch (_attrs[n].type) {
         case TypeInt:
@@ -77,5 +88,6 @@ unsigned RecordEncoder::calcSizeAttrValue(int n, const char *itAttr) {
     return size;
 }
 
+#undef LOG
 
 #endif

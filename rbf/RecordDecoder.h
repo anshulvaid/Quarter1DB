@@ -4,19 +4,20 @@
 
 class RecordDecoder{
 public:
-    RecordDecoder(char *data, unsigned size,
+    RecordDecoder(byte *data, unsigned size,
                   const vector<Attribute>& recordDescriptor);
 
-    void decode(char *dst);
+    void decode(byte *dst);
 private:
-    char *_data;
+    byte *_data;
     unsigned _size;
     const vector<Attribute>& _attrs;
 
-    unsigned decodeHeader(char *dst);
-    unsigned decodeNullsIndicator(char *dst,
+    unsigned decodeHeader(byte *dst);
+    vector<bool> getNullAttrs();
+    unsigned decodeNullsIndicator(byte *dst,
                                   const vector<bool>& nullsIndicator);
-    unsigned decodeBody(char *dst);
+    unsigned decodeBody(byte *dst);
 
 };
 

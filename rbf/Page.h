@@ -7,68 +7,66 @@ class RecordEncoder;
 class Page {
 public:
     Page();
-    Page(char *data);
+    Page(byte *data);
 
     ~Page();
 
     // Amount of free space in bytes
     unsigned getFreeSpace();
 
-    // Number of slots in the page == number of records
-    unsigned getNumberSlots();
-
+    // Insert record
     unsigned insertRecord(const RecordEncoder& re);
 
-    void insertSlot(unsigned recordOffset, unsigned recordSize);
+    // Read record into given pointer address and set its size
+    RC readRecord(unsigned slotNum, byte **recordAddr, unsigned *recordSize);
 
-    RC getRecord(unsigned slotNum, char **recordAddr, unsigned *recordSize);
-
-    char *getRecordAddr(unsigned slotNum);
-
-    unsigned getRecordSize(unsigned slotNum);
-
-    unsigned getRecordOffset(unsigned slotNum);
-
-    char *getNthSlotAddr(unsigned slotNum);
-
-    char *getData();
+    bool canStoreRecord(int size);
 
     // Reset page format. Clears all data
     void reset();
 
+    byte *getData();
+
+protected:   // for testing purposes
+    // Insert slot
+    void insertSlot(unsigned recordOffset, unsigned recordSize);
+
+    // Record accessors
+    unsigned getRecordSize(unsigned slotNum);
+    unsigned getRecordOffset(unsigned slotNum);
+    byte *getRecordAddr(unsigned slotNum);
+
+
+    // Slots accessors
+    unsigned getNumberSlots();  // == number of records
+    byte *getLastSlotAddr();
+    byte *getNthSlotAddr(int slotNum);
+    byte *getNumberSlotsAddr();
+
+    // Slots modifiers
+    void setNumberSlots(unsigned n);
+
+
+    // Free space accessors
+    unsigned getFreeSpaceOffset();
+    byte *getFreeSpaceOffsetAddr();
+    byte *getFreeSpaceAddr();
+
+    // Free space modifiers
     void setFreeSpaceOffset(unsigned offset);
 
-    char *getLastSlotAddr();
 
-    void setNumberSlots(int n);
+    // Data accessors
+    byte *getNthByteAddr(unsigned n);
+    byte *getLastNthByteAddr(unsigned n);
 
-    bool canStoreRecord(int size);
-
-    char *getFreeSpaceOffsetAddr();
-
-    char *getFreeSpaceAddr();
-
-    unsigned getFreeSpaceOffset();
-
-    char *getNumberSlotsAddr();
-
-    char *getNthByteAddr(int n);
-
-    char *getLastNthByteAddr(int n);
-
-    char *toByteArray(unsigned value);
-
-    unsigned fromByteArray(char *arr, size_t n);
-
+    // Data modifiers
     // Write 'n' bytes from the memory address 'data' to the given
     // destination address
-    void write(char *dst, char *data, size_t n);
+    void write(byte *dst, byte *data, size_t n);
 
-    // Return amount of free space in bytes
-    unsigned freeSpace();
-
-private:
-    char *_data;
+protected:
+    byte *_data;
 };
 
 #endif

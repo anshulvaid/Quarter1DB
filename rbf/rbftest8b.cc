@@ -71,7 +71,7 @@ int RBFTest_8b(RecordBasedFileManager *rbfm) {
     rbfm->printRecord(recordDescriptor, returnedData);
 
     // Compare whether the two memory blocks are the same
-    if(memcmp(record, returnedData, recordSize) != 0)
+    if(memcmp(record, returnedData, 1) != 0)
     {
         cout << "[FAIL] Test Case 8b Failed!" << endl << endl;
         free(record);
