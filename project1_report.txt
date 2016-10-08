@@ -2,7 +2,10 @@
 Student ID : 23201116
 Student Name : Pedro Matias
 OS (bit) : 64bits
-gcc version : d
+gcc version :
+    $ g++ --version
+        Apple LLVM version 7.3.0 (clang-703.0.31)
+        Target: x86_64-apple-darwin15.6.0
 
 
 2. Internal Record Format
@@ -37,20 +40,26 @@ In order to make the code easier to understand, test and extend, the logic of th
         - Holds the main logic for inserting and reading records from
         - Worth mentioning public functions:
             - unsigned getFreeSpace();
-            - unsigned insertRecord(const RecordEncoder& re);
-            RC readRecord(unsigned slotNum, byte **recordAddr, unsigned - *recordSize);
-            - bool canStoreRecord(int size);
+            - unsigned insertRecord();
+            - RC readRecord();
+            - bool canStoreRecord();
 
     - RecordEncoder
-        - Given a record with some pre-defined format 
-    - RecordDecoder
-    - ByteArray
+        - This class has the functionality to convert a record with some pre-defined format into one that is suitable to be stored in the page.
+        - Relevant public functions:
+            - unsigned encodeHeader() const;
+            - unsigned encodeBody() const;
 
-    For efficiency reasons, none of the above classes store actual data, other than small metadata variables that are useful to avoid recalculations. This way, we ca avoid the overhead of copying data between different memory addresses. For example, the classes for encoding/decoding records are given memory pointers so that they can directly encode (decode) to (from) the final destination without any intermediate overheads.
+    - RecordDecoder
+        - This class does the opposite of the RecordEncoder: converts a record with a specific format (chosen to be stored in a page) into one with some pre-defined format
+
+    - ByteArray
+        - Reading (writing) ints/reals into (from) memory
+
+    For efficiency reasons, none of the above classes store actual data, other than small metadata variables that are useful to avoid recalculations. This way, we can avoid the overhead of copying data between different memory addresses. For example, the classes for encoding/decoding records are given memory pointers so that they can directly encode (decode) to (from) the final destination without any intermediate overheads.
 
 
 
 
 5. Other (optional)
-- Freely use this section to tell us about things that are related to the project 1, but not related to the other sections (optional)
-
+N/A
