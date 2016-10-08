@@ -2,20 +2,53 @@
 Student ID : 23201116
 Student Name : Pedro Matias
 OS (bit) : 64bits
-gcc version : 
+gcc version : d
 
 
 2. Internal Record Format
 - Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that you haven't implemented this feature.
 - Describe how you store a VarChar field.
 
+Every record is composed of two parts: the header and the body.
+The header is composed of N consecutive pointers (N is the number of attributes), each one encoded in using 2 bytes, where the ith pointer points to the beginning of the ith attribute value (stored in the body). If the attribute is NULL, then the pointer has value 0. The values of the pointers are only offsets from the beginning of the record, not actual memory addresses.
+
+Right next to the header is the body which holds the actual values for the attributes. These values are "encoded" in the same format that is used to pass record data to the RecordBasedFileManager, i.e:
+    - int values are stored using 4 bytes
+    - real values are stored using 4 bytes
+    - VarChar's are stored by their actual characters prefixed by its length (stored in 4 bytes)
+    - NULL attributes are non-existing
 
 3. Page Format
-- Show your page format design
+The metadata of every page is stored at the end in the following format:
+    - The last 2 bytes store a pointer to the beginning of the free space (encoded as an offset from the beginning of the page address)
+    - The last 3rd and 4th bytes represent the number of slots in the current page, one for each record that is stored.
+    - The ith slot is represented by 4 bytes:
+        - The first 2 bytes represent the pointer to the corresponding record (offset from the beginning of the page)
+        - The last 2 bytes represent the size of the record (header + body)
+    - The slots are stored one by one, in increasing order starting from the 5th and 6th last bytes of the page (just before the bytes that represent the number of slots)
 
+The actual data (the records) starts at the beginning of the page and each record is stored using the format explained above starting after the last byte of the previous record.
+The amount of free space is calculated based on the difference between the address of the last slot and the free space starting address.
 
 4. Implementation Detail
-- Other implementation details goes here.
+In order to make the code easier to understand, test and extend, the logic of the RecordBasedFileManager was separated into multiple classes:
+
+    - Page
+        - Holds the main logic for inserting and reading records from
+        - Worth mentioning public functions:
+            - unsigned getFreeSpace();
+            - unsigned insertRecord(const RecordEncoder& re);
+            RC readRecord(unsigned slotNum, byte **recordAddr, unsigned - *recordSize);
+            - bool canStoreRecord(int size);
+
+    - RecordEncoder
+        - Given a record with some pre-defined format 
+    - RecordDecoder
+    - ByteArray
+
+    For efficiency reasons, none of the above classes store actual data, other than small metadata variables that are useful to avoid recalculations. This way, we ca avoid the overhead of copying data between different memory addresses. For example, the classes for encoding/decoding records are given memory pointers so that they can directly encode (decode) to (from) the final destination without any intermediate overheads.
+
+
 
 
 5. Other (optional)

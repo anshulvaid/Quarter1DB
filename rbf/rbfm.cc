@@ -87,8 +87,18 @@ Page* RecordBasedFileManager::findPageToInsert(FileHandle& fileHandle,
     unsigned nPages = fileHandle.getNumberOfPages();
     if (nPages > 0) {
         Page *p = new Page();
+
         // Start with the last page
-        for (int i = nPages-1; i >= 0; --i) {
+        if (fileHandle.readPage(nPages-1, p->getData()) != -1) {
+            if (p->canStoreRecord(sizeRecord)) {
+                *pageNum = nPages-1;
+                return p;
+            }
+        }
+
+
+        // Start from the first page
+        for (int i = 0; i < nPages- 1; ++i) {
             if (fileHandle.readPage(i, p->getData()) != -1) {
                 if (p->canStoreRecord(sizeRecord)) {
                     *pageNum = i;
