@@ -15,7 +15,6 @@
 RecordEncoder::RecordEncoder(const byte *data, const vector<Attribute>& attrs)
 : _data(data), _attrs(attrs) {
     calcAttrsSizes(_data + calcNullsIndicatorSize());
-
 }
 
 void RecordEncoder::encode(byte *dst) const {
@@ -86,6 +85,38 @@ unsigned RecordEncoder::calcSizeAttrValue(int n, const byte *itAttr) {
             break;
     }
     return size;
+}
+
+RC RecordEncoder::printRecord() {
+    const byte *itAttrs = _data + calcNullsIndicatorSize();
+
+    for (int i = 0; i < _attrs.size(); ++i) {
+        if (isNull(i)) {
+            printf("NULL\t");
+            continue;
+        }
+
+
+        unsigned attrSize = _attrsSizes[i];
+        switch (_attrs[i].type) {
+            case TypeInt:
+                printf("%s: %d\t", _attrs[i].name.c_str(),
+                                   ByteArray::decodeToInt(itAttrs, attrSize));
+                break;
+            case TypeReal:
+                printf("%s: %f\t", _attrs[i].name.c_str(),
+                        (float) ByteArray::decodeToFloat(itAttrs, attrSize));
+                break;
+            case TypeVarChar:
+                printf("%s: %.*s\n", _attrs[i].name.c_str(),
+                                     attrSize - 4,
+                                     itAttrs + 4);
+                break;
+        }
+        itAttrs += attrSize;
+    }
+    printf("\n");
+    return 0;
 }
 
 #undef LOG

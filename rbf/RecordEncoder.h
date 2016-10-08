@@ -22,6 +22,9 @@ public:
     void calcAttrsSizes(const byte *attrsData);
 
     unsigned calcSizeAttrValue(int n, const byte *itAttr);
+
+    RC printRecord();
+
 private:
     const byte *_data;
     const vector<Attribute>& _attrs;

@@ -32,6 +32,20 @@ public:
         return res;
     }
 
+    static int decodeToInt(const byte *arr, size_t n) {
+        int res = 0;
+        for (int i = 0; i < n; ++i) {
+            res |= (arr[i] << i*8);
+        }
+        return res;
+    }
+
+    static float decodeToFloat(const byte *arr, size_t n) {
+        float res = 0;
+        memcpy(&res, arr, n);
+        return res;
+    }
+
     // Auxiliar variable to store value of an unsigned as a byte array.
     // This we avoid creating this temporary object every time we need one.
     static unsigned char _auxByteArray[sizeof(unsigned)];

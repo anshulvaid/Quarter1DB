@@ -125,8 +125,10 @@ RC RecordBasedFileManager::readRecord(
     return -1;
 }
 
+
 RC RecordBasedFileManager::printRecord(
     const vector<Attribute>& recordDescriptor,
     const void *data) {
-    return -1;
+    RecordEncoder re((byte *) data, recordDescriptor);
+    return re.printRecord();
 }

@@ -32,8 +32,6 @@ Page::~Page() {
 /////////////////////////
 
 unsigned Page::getFreeSpace() {
-    // byte *lastSlotAddr = getNumberSlots() > 0 ? getLastSlotAddr() :
-    //                                             getNumberSlotsAddr();
     return getLastSlotAddr() - getFreeSpaceAddr();
 }
 
