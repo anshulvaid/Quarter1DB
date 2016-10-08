@@ -1,14 +1,13 @@
 include ../makefile.inc
 
-
-
+# Compile in debug mode for debug output
 debug: CPPFLAGS += -DDEBUG
-# debug: pfm.o rbfm.o
 debug: all
-
 
 all: pre-build librbf.a rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 tests/pfm-test
 
+
+# My tests
 test: pre-build tests/page-test tests/utils-test
 
 tests/page-test: librbf.a tests/page-test.o
@@ -17,9 +16,7 @@ tests/page-test.o: pfm.h rbfm.h
 tests/utils-test: librbf.a tests/utils-test.o
 tests/utils-test.o: pfm.h rbfm.h utils.h
 
-
-
-# force re-compile because of hack
+# Force re-compile because of hack
 pre-build:
 	rm -f pfm.o rbfm.o
 
@@ -72,4 +69,4 @@ $(CODEROOT)/rbf/librbf.a:
 
 .PHONY: clean
 clean:
-	-rm -rf rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 pfm-test page-test *.a *.o *~
+	-rm -rf rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 pfm-test page-test utils-test *.a *.o *~
