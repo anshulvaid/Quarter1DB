@@ -7,6 +7,10 @@ gcc version :
         Apple LLVM version 7.3.0 (clang-703.0.31)
         Target: x86_64-apple-darwin15.6.0
 
+    (Also tested in the following linux machine)
+    $ g++ --version
+        g++ (GCC) 4.8.5 20150623 (Red Hat 4.8.5-4)
+
 
 2. Internal Record Format
 - Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that you haven't implemented this feature.
