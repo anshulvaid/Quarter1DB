@@ -3,6 +3,7 @@
 FOLDER_NAME=project1-23201116
 
 rm -rf $FOLDER_NAME
+rm -rf $FOLDER_NAME.zip
 mkdir -p $FOLDER_NAME/codebase/rbf
 
 # Root files

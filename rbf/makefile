@@ -1,11 +1,12 @@
 include ../makefile.inc
 
-# Compile in debug mode for debug output
-debug: CPPFLAGS += -DDEBUG
-debug: all
 
 all: pre-build librbf.a rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 tests/pfm-test
 
+
+# Compile in debug mode for debug output
+debug: CPPFLAGS += -DDEBUG
+debug: all
 
 # My tests
 test: pre-build tests/page-test tests/utils-test
