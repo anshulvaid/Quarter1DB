@@ -91,6 +91,7 @@ RC RecordEncoder::printRecord() {
     const byte *itAttrs = _data + calcNullsIndicatorSize();
 
     for (int i = 0; i < _attrs.size(); ++i) {
+        cout << _attrs[i].name.c_str() << ": " << flush;
         if (isNull(i)) {
             printf("NULL\t");
             continue;
@@ -100,22 +101,19 @@ RC RecordEncoder::printRecord() {
         unsigned attrSize = _attrsSizes[i];
         switch (_attrs[i].type) {
             case TypeInt:
-                printf("%s: %d\t", _attrs[i].name.c_str(),
-                                   ByteArray::decodeToInt(itAttrs, attrSize));
+                cout << ByteArray::decodeToInt(itAttrs, attrSize) << "\t";
                 break;
             case TypeReal:
-                printf("%s: %f\t", _attrs[i].name.c_str(),
-                        (float) ByteArray::decodeToFloat(itAttrs, attrSize));
+                cout << (float) ByteArray::decodeToFloat(itAttrs, attrSize)
+                     << "\t";
                 break;
             case TypeVarChar:
-                printf("%s: %.*s\n", _attrs[i].name.c_str(),
-                                     attrSize - 4,
-                                     itAttrs + 4);
+                printf("%.*s\t", attrSize - 4, itAttrs + 4);
                 break;
         }
         itAttrs += attrSize;
     }
-    printf("\n");
+    cout << endl;
     return 0;
 }
 

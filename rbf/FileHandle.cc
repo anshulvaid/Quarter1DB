@@ -37,13 +37,16 @@ RC FileHandle::readPage(PageNum pageNum, void *data) {
 }
 
 
-RC FileHandle::writePage(PageNum pageNum, const void *data) {
+RC FileHandle::writePage(PageNum pageNum, const void *data,
+                         bool incCounter) {
     if (isHandlingFile()) {
         if (pageNum < _nPages) {
             _fs.seekg(pageNum * PAGE_SIZE);
             _fs.write((char *) data, PAGE_SIZE);
             _fs.flush();
-            writePageCounter++;
+            if (incCounter) {
+                writePageCounter++;
+            }
             return 0;
         }
     }
@@ -55,7 +58,7 @@ RC FileHandle::writePage(PageNum pageNum, const void *data) {
 RC FileHandle::appendPage(const void *data) {
     if (isHandlingFile()) {
         appendPageCounter++;
-        return writePage(_nPages++, data);
+        return writePage(_nPages++, data, false);
     }
 
     return -1;

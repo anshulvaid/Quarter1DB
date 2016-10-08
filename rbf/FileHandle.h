@@ -26,7 +26,7 @@ public:
     RC readPage(PageNum pageNum, void *data);
 
     // Writes a specific page
-    RC writePage(PageNum pageNum, const void *data);
+    RC writePage(PageNum pageNum, const void *data, bool incCounter = true);
 
     // Appends a specific page
     RC appendPage(const void *data);
