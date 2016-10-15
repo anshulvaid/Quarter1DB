@@ -1,0 +1,80 @@
+1. Basic information
+Student ID : 27123502	
+Student Name : ANSHUL VAID
+OS (bit) : Ubuntu 16.04 (64 bit)
+gcc version : 5.4
+
+
+2. Internal Record Format
+- Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that you haven't implemented this feature.
+The internal record is structured as follows:
+The first few bytes are reserved for storing the offset(relative to the record) of the end of the attribute value. For example, there are 4 attributes. So the first 8 bytes will be reserved for the offsets. If the first attribute was of type 'int', the first 2 bytes will store the location 12, i.e., the end of the attribute value. If any attribute is NULL, '-1' is stored as the offset. The length of a variable-length attribute can be found by subtracting the previous offset from its offset. 
+For the input record(taken from the test cases): 0,8,"Anteater",25,177.8,6200 {total of 25 bytes}
+The internal record will be: 16,20,24,28,"Anteater",25,177.8,6200 {total of 28 bytes}
+The offset of the last attribute is equal to the record's length. The total number of attributes can be easily found out from the recordDescriptor.
+This representation provides O(1) time complexity for fetching an attribute from a record.
+Taking the same example as above, if the 3rd attribute was to be fetched, first go to the start of the 5th byte and read 2 bytes to get the end location of this attribute. This will return 24 as the end location. Since it is not equal to "-1" (null condition), read 2 bytes from the start of the 3rd byte to get the end location of the 2nd attribute. This will give the beginning of the 3rd attribute, which is 20. Depending on the type of the attribute, read the bytes. Since the attribute type here is 'float', read 4 bytes from the start of 20th byte to get the attribute value. It would have been a similar process in case of attribute type being 'int'. Had the attribute type been varchar, the length of the record would have been calculated by subtracting the end of the 2nd attribute from the end of the 3rd attribute. Since the offsets to the attribute values are stored in the record, fetching a field is done in O(1).
+
+- Describe how you store a VarChar field.
+If the varchar field was null, its corresponding offset field would store "-1". If the field has a valid value, get the actual length of this attribute since this is a variable length attribute. The field is stored at the next available space in the record and the sum of it's start position and its length (which will give its end position) is stored in the offset field. It can be fetched in the manner as described above.
+
+3. Page Format
+Directory Structure
+The directory stores the number of free bytes, followed by the total number of slots (in a way, total number of records) present in the page, followed by the slots. Each of these take 2 bytes in a page. Each slot contains the position where a record ends. Slot numbers begin from 1. The length of a record can be found by subtracting the offset stored in the previous slot from its offset. Since we are storing the end of the records, the last record's slot would point to the starting of the free space. 
+Example: 3684, 3, 124, 258, 402
+3684 denotes the number of free bytes, 3 is the total number of slots, 124 is the end of the first record and so on.
+
+Page Structure
+Each page is assumed to be of 4Kbs. The records are populated in the page starting at the beginning of the page, while the directory is stored at the end of the page. The records grow downwards while the directory grows upwards. Free space is maintained in between. In order to get to a certain page, the page number(provided by the caller) and the page size are used to calculate its position in the file.
+
+
+4. Implementation Detail
+insertRecord
+The input record is first parsed into the internal representation. The parsing is done as follows:
+a-> Run a loop till number of attributes
+b-> Check if the current attribute is null by checking the corresponding bit in the nullFieldsIndicator.
+c-> If not null, check the type of the attribute. If null, store the byte location of the attribute as '-1'
+d-> if the attribute type is int, insert the attribute in the internal record, and increase the dataEntryOffset by sizeof(int). Store the byte location of the attribute end in the blocks designated for this purpose. The next position to be written is maintained by the variable offset. Increment offset and dataReadOffset by sizeof(short int).
+e-> if the attribute type is float, insert the attribute in the internal record, and increase the dataEntryOffset by sizeof(float). Store the byte location of the attribute end in the blocks designated for this purpose. The next position to be written is maintained by the variable offset. Increment offset and dataReadOffset by sizeof(short int).
+f-> if the attribute type is varchar, get the actual length of this attribute since this is a variable length attribute. Increment the dataReadOffset by sizeof(int). Insert the attribute value in the internal record and increment the dataEntryOffset by the length of the attribute. Store the byte location of the attribute end in the blocks designated for this purpose. The next position to be written is maintained by the variable offset. Increment offset sizeof(short int) and dataReadOffset by length of the attribute.
+
+If the file is empty, the record and the directory are written in a new page and that page is appended in the file. If not, then the last page of the file is checked. If it contains enough space, i.e., length of the record + 2 bytes for slot, then the record is inserted in the last page. Otherwise, it finds a page which can store this record, starting from page number 0. 
+If a page with needed space is found, the record is stored at the location given by the last slot in the directory. The number of free bytes is updated in the directory. The number of slots is updated and a slot for the newly added record is added to the directory. 
+If no such page is found, a new page with this record and the directory structure is created and appended to the file.
+Free all the dynamically allocated memory.
+
+readRecord
+The first check is a sanity check, as to whether the slot number provided isn't 0. 
+If the slot number is valid, the specified page is fetched from the file. Once the page is available, the recordEndOffset and the recordBeginOffset is calculated from the directory, and the record is fetched. It is then converted from the internal format to the caller's format and is then returned back to the caller. 
+Defintion of variable used:
+//attribEndOffset stores the position where the attribute ends in the record
+//readOffset stores the position from where attribute locations are read
+//dataReadoffset stores the position from where the actual attribute value is fetched
+//writeOffset stores the current position to write in the 'data' record
+
+The conversion takes place as follows:
+a-> NullFieldsIndicator is initially intialised to 0, and is written to the beginning of data.
+b-> Run a loop till number of attributes
+c-> Get the attribEndOffset
+d-> If this number is '-1', the attribute is null. The nullFieldsIndicator is updated to reflect this.
+e-> If the attribute isn't null, check the type of the attribute.
+f-> If the attribute type is 'int', write the attribute value to the 'data' and increment the writeOffset by sizeof(int).
+g-> If the attribute type is 'float', write the attribute value to the 'data' and increment the writeOffset by sizeof(float).
+h-> If the attribute type is 'varchar', get the actual length of the attribute value. Write the length of the attribute followed by the attribute value to 'data'. Increment the writeOffset by the length of the attribute value.
+i-> set the dataReadOffset to the attribEndOffset in order to get the next attribute. 
+j-> Increment the readOffset by sizeof(short int). Repeat the loop.
+k-> if there were any null attributes, update the 'data' with the updated nullFieldsIndicator.
+Free the dynamically allocated memory
+
+printRecord
+Get the nullFieldsIndicator from the input data.
+Run a loop till numberOfAttributes
+Check the corresponding bit in the nullFieldsIndicator to check if this attribute is null. If null, print the name of the attribute and NULL
+If it isn't null, check the type of the attribute from recordDescriptor
+If type is 'int', print the name of the attribute and the integer value. Increment the offset by sizeof(int)
+If type is 'float', print the name of the attribute and the integer value. Increment the offset by sizeof(float)
+if the type is 'varchar', get the length of the attribute value. Fetch these many bytes from data, and get the attribute value. Print the name of the attribute and the value.
+
+5. Other (optional)
+- Freely use this section to tell us about things that are related to the project 1, but not related to the other sections (optional)
+
