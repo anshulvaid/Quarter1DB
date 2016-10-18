@@ -64,7 +64,8 @@ void RecordEncoder::calcAttrsSizes(const byte *attrsData) {
     const byte *it = attrsData;
     int i = 0; _totalAttrsSizes = 0;
     for(auto& s: _attrsSizes) {
-        s = calcSizeAttrValue(i++, it);
+        s = isNull(i) ? 0 : calcSizeAttrValue(i, it);
+        i++;
         it += s;
         _totalAttrsSizes += s;
     }

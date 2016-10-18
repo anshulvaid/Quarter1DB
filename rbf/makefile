@@ -4,7 +4,7 @@ include ../makefile.inc
 all: pre-build librbf.a rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 tests/pfm-test rbftest_p0 rbftest_p1 rbftest_p1b rbftest_p1c rbftest_p2 rbftest_p2b rbftest_p3 rbftest_p4
 
 # Compile in debug mode for debug output
-debug: CPPFLAGS += -DDEBUG
+debug: CPPFLAGS += -DDEBUG -g
 debug: all
 
 # My tests
