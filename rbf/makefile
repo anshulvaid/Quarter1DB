@@ -1,8 +1,7 @@
 include ../makefile.inc
 
 
-all: pre-build librbf.a rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 tests/pfm-test
-
+all: pre-build librbf.a rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 tests/pfm-test rbftest_p0 rbftest_p1 rbftest_p1b rbftest_p1c rbftest_p2 rbftest_p2b rbftest_p3 rbftest_p4
 
 # Compile in debug mode for debug output
 debug: CPPFLAGS += -DDEBUG
@@ -45,6 +44,14 @@ rbftest9.o: pfm.h rbfm.h
 rbftest10.o: pfm.h rbfm.h
 rbftest11.o: pfm.h rbfm.h
 rbftest12.o: pfm.h rbfm.h
+rbftest_p0.o: pfm.h rbfm.h
+rbftest_p1.o: pfm.h rbfm.h
+rbftest_p1b.o: pfm.h rbfm.h
+rbftest_p1c.o: pfm.h rbfm.h
+rbftest_p2.o: pfm.h rbfm.h
+rbftest_p2b.o: pfm.h rbfm.h
+rbftest_p3.o: pfm.h rbfm.h
+rbftest_p4.o: pfm.h rbfm.h
 tests/pfm-test.o: pfm.h
 
 # binary dependencies
@@ -61,6 +68,14 @@ rbftest9: rbftest9.o librbf.a $(CODEROOT)/rbf/librbf.a
 rbftest10: rbftest10.o librbf.a $(CODEROOT)/rbf/librbf.a
 rbftest11: rbftest11.o librbf.a $(CODEROOT)/rbf/librbf.a
 rbftest12: rbftest12.o librbf.a $(CODEROOT)/rbf/librbf.a
+rbftest_p0: rbftest_p0.o librbf.a $(CODEROOT)/rbf/librbf.a
+rbftest_p1: rbftest_p1.o librbf.a $(CODEROOT)/rbf/librbf.a
+rbftest_p1b: rbftest_p1b.o librbf.a $(CODEROOT)/rbf/librbf.a
+rbftest_p1c: rbftest_p1c.o librbf.a $(CODEROOT)/rbf/librbf.a
+rbftest_p2: rbftest_p2.o librbf.a $(CODEROOT)/rbf/librbf.a
+rbftest_p2b: rbftest_p2b.o librbf.a $(CODEROOT)/rbf/librbf.a
+rbftest_p3: rbftest_p3.o librbf.a $(CODEROOT)/rbf/librbf.a
+rbftest_p4: rbftest_p4.o librbf.a $(CODEROOT)/rbf/librbf.a
 tests/pfm-test: tests/pfm-test.o librbf.a $(CODEROOT)/rbf/librbf.a
 
 # dependencies to compile used libraries
@@ -70,4 +85,4 @@ $(CODEROOT)/rbf/librbf.a:
 
 .PHONY: clean
 clean:
-	-rm -rf rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 pfm-test page-test utils-test *.a *.o *~
+	-rm -rf rbftest1 rbftest2 rbftest3 rbftest4 rbftest5 rbftest6 rbftest7 rbftest8 rbftest8b rbftest9 rbftest10 rbftest11 rbftest12 pfm-test page-test utils-test *.a *.o *~ rbftest_p0 rbftest_p1 rbftest_p1b rbftest_p1c rbftest_p2 rbftest_p2b rbftest_p3 rbftest_p4
