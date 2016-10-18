@@ -67,7 +67,7 @@ unsigned RecordDecoder::decodeNullsIndicator(byte *dst,
         mask >>= 1;
 
         // Write byte
-        if (i == _attrs.size() - 1 || (i % 8 == 0 && i != 0) ) {
+        if (i == _attrs.size() - 1 || mask == 0 ) {
             LOG("Byte " << (i / 8) << " of nulls indicator has value "
                     << hex << (unsigned) b);
             *writePos++ = b;
