@@ -2,16 +2,10 @@
 
 
 for i in {1..12}; do
-    rbf/rbftest$i 2> /dev/null
-    if [ $? -ne 0 ]; then
-        exit $?
-    fi
+    rbf/rbftest$i || exit $?
 
     if [[ $i -eq 8 ]]; then
-        rbf/rbftest${i}b 2> /dev/null
-        if [ $? -ne 0 ]; then
-            exit $?
-        fi
+        rbf/rbftest${i}b || exit $?
     fi
 
 done
