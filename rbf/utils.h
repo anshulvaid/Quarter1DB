@@ -51,7 +51,25 @@ public:
     static unsigned char _auxByteArray[sizeof(unsigned)];
 };
 
+
 unsigned char ByteArray::_auxByteArray[sizeof(unsigned)];
+
+
+template<typename T>
+struct Maybe {
+public:
+    Maybe() : _valid(false) {}
+    Maybe(T t) : _data(t), _valid(true) {}
+    explicit operator bool() const {
+        return _valid;
+    }
+    T operator*() const {
+        return _data;
+    }
+private:
+  T _data;
+  bool _valid;
+};
 
 
 

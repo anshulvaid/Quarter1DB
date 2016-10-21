@@ -4,10 +4,14 @@
 
 class RecordDecoder{
 public:
+    // Constructors
+    RecordDecoder(const vector<Attribute>& recordDescriptor);
     RecordDecoder(byte *data, unsigned size,
                   const vector<Attribute>& recordDescriptor);
 
     void decode(byte *dst);
+    void setRecordData(byte *recordAddr, unsigned size);
+
 private:
     byte *_data;
     unsigned _size;

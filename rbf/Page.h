@@ -1,7 +1,7 @@
 #ifndef _page_h_
 #define _page_h_
 
-class RecordEncoder;
+class RCEncoder;
 
 
 class Page {
@@ -14,8 +14,8 @@ public:
     // Amount of free space in bytes
     unsigned getFreeSpace();
 
-    // Insert record
-    unsigned insertRecord(const RecordEncoder& re);
+    // Insert record. Returns the slot ID for the newly inserted record
+    unsigned insertRecord(const RCEncoder& rc);
 
     // Read record into given pointer address and set its size
     RC readRecord(unsigned slotNum, byte **recordAddr, unsigned *recordSize);

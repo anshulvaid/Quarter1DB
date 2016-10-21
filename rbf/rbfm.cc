@@ -3,12 +3,17 @@
 #include <math.h>
 #include <vector>
 #include <iostream>
+#include <memory>
 
 ////////////////// Ugly hack to circumvent problem of having a fixed makefile
 #include "RecordEncoder.h"
 #include "RecordEncoder.cc"
 #include "RecordDecoder.h"
 #include "RecordDecoder.cc"
+#include "RCEncoder.h"
+#include "RCEncoder.cc"
+#include "RCDecoder.h"
+#include "RCDecoder.cc"
 #include "Page.h"
 #include "Page.cc"
 
@@ -57,14 +62,16 @@ RC RecordBasedFileManager::insertRecord(
     RID& rid) {
 
 
-    RecordEncoder re((byte *) data, recordDescriptor);
+    shared_ptr<RecordEncoder> re = make_shared<RecordEncoder>
+                                            ((byte *) data, recordDescriptor);
+    RCEncoder rc(re);
 
     int pageNum;
-    Page *p = findPageToInsert(fileHandle, re.sizeAfterEncode(), &pageNum);
+    Page *p = findPageToInsert(fileHandle, rc.sizeAfterEncode(), &pageNum);
     if (p != NULL) {
         LOG("Inserting record into page " << pageNum);
         rid.pageNum = pageNum;
-        rid.slotNum = p->insertRecord(re);
+        rid.slotNum = p->insertRecord(rc);
         fileHandle.writePage(pageNum, p->getData());
         delete p;
         return 0;
@@ -123,11 +130,17 @@ RC RecordBasedFileManager::readRecord(
     Page p;
 
     if (fileHandle.readPage(rid.pageNum, p.getData()) != -1) {
-        byte *recordAddr;
-        unsigned recordSize;
-        if (p.readRecord(rid.slotNum, &recordAddr, &recordSize) != -1) {
-            RecordDecoder rd(recordAddr, recordSize, recordDescriptor);
-            rd.decode((byte *) data);
+        byte *rcAddr;
+        unsigned rcSize;
+        if (p.readRecord(rid.slotNum, &rcAddr, &rcSize) != -1) {
+            shared_ptr<RecordDecoder> rd
+                                = make_shared<RecordDecoder>(recordDescriptor);
+            RCDecoder rc(rcAddr, rcSize, rd);
+            if (rc.hasAnotherRID()) {
+                return readRecord(fileHandle, recordDescriptor,
+                                  rc.decodeNextRID(), data);
+            }
+            rc.decode((byte *) data);
             return 0;
         }
     }

@@ -7,11 +7,16 @@
 #define _recordDecoder_cc_
 
 
+#include <cassert>
 #include "utils.h"
 #ifndef LOG   // avoid overwriting definition
     #define LOG(msg) __LOG__("RecordDecoder", msg)
 #endif
 
+
+RecordDecoder::RecordDecoder(const vector<Attribute>& recordDescriptor)
+        : _data(NULL), _size(0), _attrs(recordDescriptor){
+}
 
 RecordDecoder::RecordDecoder(byte *data, unsigned size,
                              const vector<Attribute>& recordDescriptor)
@@ -22,6 +27,8 @@ RecordDecoder::RecordDecoder(byte *data, unsigned size,
 }
 
 void RecordDecoder::decode(byte *dst) {
+    assert(_data != NULL);
+
     LOG("Decoding record to address " << (void *) dst);
     dst += decodeHeader(dst);
     dst += decodeBody(dst);
@@ -85,6 +92,12 @@ unsigned RecordDecoder::decodeBody(byte *dst) {
     unsigned bodySize = _size - headerSize;
     memcpy(dst, _data + headerSize, bodySize);
     return bodySize;
+}
+
+
+void RecordDecoder::setRecordData(byte *recordAddr, unsigned size) {
+    _data = recordAddr;
+    _size = size;
 }
 
 #undef LOG

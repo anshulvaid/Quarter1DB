@@ -36,15 +36,15 @@ unsigned Page::getFreeSpace() {
 }
 
 
-unsigned Page::insertRecord(const RecordEncoder& re) {
-    LOG("Inserting new record of size " << re.sizeAfterEncode()
+unsigned Page::insertRecord(const RCEncoder& rc) {
+    LOG("Inserting new record of size " << rc.sizeAfterEncode()
         << " bytes into address " << (void *) getFreeSpaceAddr()
         << " (offset = " << getFreeSpaceAddr() - _data << ")");
 
     byte *freeSpaceAddr = getFreeSpaceAddr();
-    re.encode(freeSpaceAddr);
-    insertSlot(getFreeSpaceOffset(), re.sizeAfterEncode());
-    setFreeSpaceOffset(getFreeSpaceOffset() + re.sizeAfterEncode());
+    rc.encode(freeSpaceAddr);
+    insertSlot(getFreeSpaceOffset(), rc.sizeAfterEncode());
+    setFreeSpaceOffset(getFreeSpaceOffset() + rc.sizeAfterEncode());
     return getNumberSlots() - 1;
 }
 
