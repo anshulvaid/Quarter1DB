@@ -13,6 +13,9 @@
 #endif
 
 
+RCDecoder::RCDecoder() : _header(NULL), _body(NULL), _size(0) {
+}
+
 RCDecoder::RCDecoder(byte *data, unsigned size, shared_ptr<RecordDecoder> rd)
                 : _header(data), _size(size), _rd(rd){
     if (hasAnotherRID()) {
@@ -42,6 +45,7 @@ void RCDecoder::decode(byte *dst) {
 
 
 inline bool RCDecoder::hasAnotherRID() {
+    assert(_header != NULL);
     return ((*_header & 0x80000000) != 0);
 }
 

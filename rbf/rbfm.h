@@ -10,6 +10,10 @@
 
 using namespace std;
 
+class RCDecoder;
+template<typename T>
+struct Maybe;
+
 // Record ID
 typedef struct
 {
@@ -173,6 +177,10 @@ private:
 
     // Reference to the paged file manager
     PagedFileManager& _pfm;
+
+    Maybe<RCDecoder> getRecordDecoder(FileHandle& fileHandle,
+                                    const vector<Attribute>& recordDescriptor,
+                                    const RID& rid);
 };
 
 #endif

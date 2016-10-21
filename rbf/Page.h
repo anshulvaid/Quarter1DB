@@ -14,7 +14,8 @@ public:
     // Amount of free space in bytes
     unsigned getFreeSpace();
 
-    // Insert record. Returns the slot ID for the newly inserted record
+    // Insert record. Returns the slot ID (starting at 0)
+    // for the newly inserted record
     unsigned insertRecord(const RCEncoder& rc);
 
     // Read record into given pointer address and set its size
@@ -28,8 +29,6 @@ public:
     byte *getData();
 
 protected:   // for testing purposes
-    // Insert slot
-    void insertSlot(unsigned recordOffset, unsigned recordSize);
 
     // Record accessors
     unsigned getRecordSize(unsigned slotNum);
@@ -42,9 +41,12 @@ protected:   // for testing purposes
     byte *getLastSlotAddr();
     byte *getNthSlotAddr(int slotNum);
     byte *getNumberSlotsAddr();
+    inline bool slotCanBeReused(unsigned slotNum);
 
     // Slots modifiers
     void setNumberSlots(unsigned n);
+    void insertSlot(unsigned recordOffset, unsigned recordSize);
+    void setSlot(unsigned slotNum, unsigned recordOffset, unsigned recordSize);
 
 
     // Free space accessors

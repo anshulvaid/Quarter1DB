@@ -18,6 +18,7 @@ using namespace std;
 class RCDecoder {
 public:
     // Constructors
+    RCDecoder();
     RCDecoder(byte *data, unsigned size, shared_ptr<RecordDecoder> rd);
 
     inline bool hasAnotherRID();

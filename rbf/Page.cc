@@ -41,8 +41,17 @@ unsigned Page::insertRecord(const RCEncoder& rc) {
         << " bytes into address " << (void *) getFreeSpaceAddr()
         << " (offset = " << getFreeSpaceAddr() - _data << ")");
 
-    byte *freeSpaceAddr = getFreeSpaceAddr();
-    rc.encode(freeSpaceAddr);
+    rc.encode(getFreeSpaceAddr());
+
+    // Find if there's a slot that can be reused
+    for (int i = 0; i < getNumberSlots(); ++i) {
+        if (slotCanBeReused(i)) {
+            setSlot(i, getFreeSpaceOffset(), + rc.sizeAfterEncode());
+            setFreeSpaceOffset(getFreeSpaceOffset() + rc.sizeAfterEncode());
+            return i;
+        }
+    }
+
     insertSlot(getFreeSpaceOffset(), rc.sizeAfterEncode());
     setFreeSpaceOffset(getFreeSpaceOffset() + rc.sizeAfterEncode());
     return getNumberSlots() - 1;
@@ -90,9 +99,17 @@ void Page::insertSlot(unsigned recordOffset, unsigned recordSize) {
     LOG("Inserting a new slot with offset " << recordOffset
         << " and size " << recordSize << " bytes");
 
-    write(getLastSlotAddr() - 4, ByteArray::encode(recordOffset), 2);
-    write(getLastSlotAddr() - 2, ByteArray::encode(recordSize), 2);
+    setSlot(getNumberSlots(), recordOffset, recordSize);
     setNumberSlots(getNumberSlots() + 1);
+}
+
+
+// Set ith slot
+void Page::setSlot(unsigned slotNum,
+                   unsigned recordOffset,
+                   unsigned recordSize) {
+    write(getNthSlotAddr(slotNum), ByteArray::encode(recordOffset), 2);
+    write(getNthSlotAddr(slotNum) + 2, ByteArray::encode(recordSize), 2);
 }
 
 
@@ -123,10 +140,6 @@ byte *Page::getLastSlotAddr() {
     return getNthSlotAddr(n - 1);
 }
 
-// byte *Page::getFutureSlotAddr() {
-//     return ;
-// }
-
 byte *Page::getNthSlotAddr(int slotNum) {
     return getLastNthByteAddr(slotNum * 4 + 7);
 }
@@ -135,6 +148,9 @@ byte *Page::getNumberSlotsAddr() {
     return getLastNthByteAddr(3);
 }
 
+inline bool Page::slotCanBeReused(unsigned slotNum) {
+    return getRecordOffset(slotNum) == 0xFFFF;
+}
 
 // Slots modifiers
 void Page::setNumberSlots(unsigned n) {

@@ -127,25 +127,36 @@ RC RecordBasedFileManager::readRecord(
     LOG("Reading record with rid (" << rid.pageNum << ", " << rid.slotNum <<
         ")    (page, slot)");
 
-    Page p;
+    Maybe<RCDecoder> rc = getRecordDecoder(fileHandle, recordDescriptor, rid);
+    if (rc) {
+        if ((*rc).hasAnotherRID()) {
+            return readRecord(fileHandle, recordDescriptor,
+                              (*rc).decodeNextRID(), data);
+        }
+        (*rc).decode((byte *) data);
+        return 0;
+    }
+    return -1;
+}
 
+Maybe<RCDecoder> RecordBasedFileManager::getRecordDecoder(
+                                    FileHandle& fileHandle,
+                                    const vector<Attribute>& recordDescriptor,
+                                    const RID& rid) {
+    Maybe<RCDecoder> result;
+
+    Page p;
     if (fileHandle.readPage(rid.pageNum, p.getData()) != -1) {
         byte *rcAddr;
         unsigned rcSize;
         if (p.readRecord(rid.slotNum, &rcAddr, &rcSize) != -1) {
             shared_ptr<RecordDecoder> rd
                                 = make_shared<RecordDecoder>(recordDescriptor);
-            RCDecoder rc(rcAddr, rcSize, rd);
-            if (rc.hasAnotherRID()) {
-                return readRecord(fileHandle, recordDescriptor,
-                                  rc.decodeNextRID(), data);
-            }
-            rc.decode((byte *) data);
-            return 0;
+            result = RCDecoder(rcAddr, rcSize, rd);
         }
     }
 
-    return -1;
+    return result;
 }
 
 
@@ -154,4 +165,17 @@ RC RecordBasedFileManager::printRecord(
     const void *data) {
     RecordEncoder re((byte *) data, recordDescriptor);
     return re.printRecord();
+}
+
+
+
+RC deleteRecord(FileHandle& fileHandle,
+                const vector<Attribute>& recordDescriptor,
+                const RID& rid) {
+    Page p;
+    if (fileHandle.readPage(rid.pageNum, p.getData()) != -1) {
+        // return p.deleteRecord(rid.slotNum, recordDescriptor);
+    }
+
+    return -1;
 }
