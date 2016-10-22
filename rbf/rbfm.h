@@ -178,9 +178,14 @@ private:
     // Reference to the paged file manager
     PagedFileManager& _pfm;
 
-    Maybe<RCDecoder> getRecordDecoder(FileHandle& fileHandle,
-                                    const vector<Attribute>& recordDescriptor,
-                                    const RID& rid);
+
+    // Find record in the file given by the file handle. The first parameter
+    // corresponds to a previously allocated page instance where we can load
+    // the page where the record exists
+    Maybe<RCDecoder> findRecord(const Page& allocPage,
+                                FileHandle& fileHandle,
+                                const vector<Attribute>& recordDescriptor,
+                                const RID& rid);
 };
 
 #endif

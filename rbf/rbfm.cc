@@ -127,7 +127,8 @@ RC RecordBasedFileManager::readRecord(
     LOG("Reading record with rid (" << rid.pageNum << ", " << rid.slotNum <<
         ")    (page, slot)");
 
-    Maybe<RCDecoder> rc = getRecordDecoder(fileHandle, recordDescriptor, rid);
+    Page p;         // allocate memory to read the page
+    Maybe<RCDecoder> rc = findRecord(p, fileHandle, recordDescriptor, rid);
     if (rc) {
         if ((*rc).hasAnotherRID()) {
             return readRecord(fileHandle, recordDescriptor,
@@ -139,17 +140,17 @@ RC RecordBasedFileManager::readRecord(
     return -1;
 }
 
-Maybe<RCDecoder> RecordBasedFileManager::getRecordDecoder(
+Maybe<RCDecoder> RecordBasedFileManager::findRecord(
+                                    const Page& allocPage,
                                     FileHandle& fileHandle,
                                     const vector<Attribute>& recordDescriptor,
                                     const RID& rid) {
     Maybe<RCDecoder> result;
 
-    Page p;
-    if (fileHandle.readPage(rid.pageNum, p.getData()) != -1) {
+    if (fileHandle.readPage(rid.pageNum, allocPage.getData()) != -1) {
         byte *rcAddr;
         unsigned rcSize;
-        if (p.readRecord(rid.slotNum, &rcAddr, &rcSize) != -1) {
+        if (allocPage.readRecord(rid.slotNum, &rcAddr, &rcSize) != -1) {
             shared_ptr<RecordDecoder> rd
                                 = make_shared<RecordDecoder>(recordDescriptor);
             result = RCDecoder(rcAddr, rcSize, rd);

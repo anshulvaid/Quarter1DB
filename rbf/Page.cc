@@ -31,7 +31,7 @@ Page::~Page() {
 // Public functions
 /////////////////////////
 
-unsigned Page::getFreeSpace() {
+unsigned Page::getFreeSpace() const {
     return getLastSlotAddr() - getFreeSpaceAddr();
 }
 
@@ -58,7 +58,8 @@ unsigned Page::insertRecord(const RCEncoder& rc) {
 }
 
 
-RC Page::readRecord(unsigned slotNum, byte **recordAddr, unsigned *recordSize){
+RC Page::readRecord(unsigned slotNum,
+                    byte **recordAddr, unsigned *recordSize) const {
     LOG("Read record on slot " << slotNum);
 
     if (getNumberSlots() >= slotNum) {
@@ -74,7 +75,7 @@ RC Page::readRecord(unsigned slotNum, byte **recordAddr, unsigned *recordSize){
 }
 
 
-bool Page::canStoreRecord(int size) {
+bool Page::canStoreRecord(int size) const {
     return getFreeSpace() >= size + 4;
 }
 
@@ -114,41 +115,41 @@ void Page::setSlot(unsigned slotNum,
 
 
 // Record accessors
-unsigned Page::getRecordSize(unsigned slotNum) {
+unsigned Page::getRecordSize(unsigned slotNum) const {
     LOG("Address of slot " << slotNum << " is " <<
            (void *) getNthSlotAddr(slotNum));
     return ByteArray::decode(getNthSlotAddr(slotNum) + 2, 2);
 }
 
-unsigned Page::getRecordOffset(unsigned slotNum) {
+unsigned Page::getRecordOffset(unsigned slotNum) const {
     return ByteArray::decode(getNthSlotAddr(slotNum), 2);
 }
 
-byte *Page::getRecordAddr(unsigned slotNum) {
+byte *Page::getRecordAddr(unsigned slotNum) const {
     return _data + getRecordOffset(slotNum);
 }
 
 
 // Slots accessors
-unsigned Page::getNumberSlots() {
+unsigned Page::getNumberSlots() const {
     return ByteArray::decode(getLastNthByteAddr(3), 2);
 }
 
-byte *Page::getLastSlotAddr() {
+byte *Page::getLastSlotAddr() const {
     unsigned n = getNumberSlots();
     // assert(n > 0 && "No slots were assigned yet");
     return getNthSlotAddr(n - 1);
 }
 
-byte *Page::getNthSlotAddr(int slotNum) {
+byte *Page::getNthSlotAddr(int slotNum) const {
     return getLastNthByteAddr(slotNum * 4 + 7);
 }
 
-byte *Page::getNumberSlotsAddr() {
+byte *Page::getNumberSlotsAddr() const {
     return getLastNthByteAddr(3);
 }
 
-inline bool Page::slotCanBeReused(unsigned slotNum) {
+inline bool Page::slotCanBeReused(unsigned slotNum) const {
     return getRecordOffset(slotNum) == 0xFFFF;
 }
 
@@ -160,15 +161,15 @@ void Page::setNumberSlots(unsigned n) {
 
 
 // Free space accessors
-unsigned Page::getFreeSpaceOffset() {
+unsigned Page::getFreeSpaceOffset() const {
     return ByteArray::decode(getFreeSpaceOffsetAddr(), 2);
 }
 
-byte *Page::getFreeSpaceOffsetAddr() {
+byte *Page::getFreeSpaceOffsetAddr() const {
     return getLastNthByteAddr(1);
 }
 
-byte *Page::getFreeSpaceAddr() {
+byte *Page::getFreeSpaceAddr() const {
     LOG("getFreeSpaceOffset() = " << getFreeSpaceOffset());
     return _data + getFreeSpaceOffset();
 }
@@ -181,11 +182,11 @@ void Page::setFreeSpaceOffset(unsigned offset) {
 
 
 // Data accessors
-byte *Page::getNthByteAddr(unsigned n) {
+byte *Page::getNthByteAddr(unsigned n) const {
     return _data + n;
 }
 
-byte *Page::getLastNthByteAddr(unsigned n) {
+byte *Page::getLastNthByteAddr(unsigned n) const {
     return _data + PAGE_SIZE - 1 - n;
 }
 
@@ -195,7 +196,7 @@ void Page::write(byte *dst, byte *data, size_t n) {
     memcpy(dst, data, n);
 }
 
-byte *Page::getData() {
+byte *Page::getData() const {
     return _data;
 }
 
