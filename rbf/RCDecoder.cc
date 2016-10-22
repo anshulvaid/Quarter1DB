@@ -44,6 +44,13 @@ void RCDecoder::decode(byte *dst) {
 }
 
 
+RC RCDecoder::decodeAttr(byte *dst,
+                           const vector<Attribute>& recordDescriptor,
+                           const string& attributeName) {
+    return _rd->decodeAttr(dst, recordDescriptor, attributeName);
+}
+
+
 inline bool RCDecoder::hasAnotherRID() {
     assert(_header != NULL);
     return ((*_header & 0x80000000) != 0);

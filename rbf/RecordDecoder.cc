@@ -8,6 +8,7 @@
 
 
 #include <cassert>
+#include <string.h>
 #include "utils.h"
 #ifndef LOG   // avoid overwriting definition
     #define LOG(msg) __LOG__("RecordDecoder", msg)
@@ -39,13 +40,68 @@ unsigned RecordDecoder::decodeHeader(byte *dst) {
     return decodeNullsIndicator(dst, getNullAttrs());
 }
 
+
+RC RecordDecoder::decodeAttr(byte *dst,
+                               const vector<Attribute>& recordDescriptor,
+                               const string& attributeName) {
+    // Find the position of the attribute
+    int attrPos = -1;
+    for (int i = 0; i < recordDescriptor.size(); ++i) {
+        if (recordDescriptor[i].name == attributeName){
+            attrPos = i;
+            break;
+        }
+    }
+
+    if (attrPos == -1) {
+        return -1;
+    }
+
+    // TODO: restructure and reuse functions
+    if (isAttrNull(attrPos)) {
+        // Write nulls indicator
+        memset(dst, 0x80, 1);
+    }
+    else {
+        // Write nulls indicator
+        memset(dst, 0x0, 1);
+
+        // Write data
+        byte *attrAddr = getAttrAddr(attrPos);
+        memcpy(dst + 1, attrAddr, calcSizeAttrValue(attrPos, attrAddr));
+    }
+
+    return 0;
+}
+
+unsigned RecordDecoder::calcSizeAttrValue(int n, const byte *itAttr) {
+    unsigned size;
+    switch (_attrs[n].type) {
+        case TypeInt:
+            size = _attrs[n].length;
+            break;
+        case TypeReal:
+            size = _attrs[n].length;
+            break;
+        case TypeVarChar:
+            size = ByteArray::decode(itAttr, 4) + 4;
+            break;
+    }
+    return size;
+}
+
+
+byte *RecordDecoder::getAttrAddr(int attrPos) {
+    return _data + 2 * attrPos;
+}
+
+
 vector<bool> RecordDecoder::getNullAttrs() {
     LOG("Getting null attributes");
 
     vector<bool> result(_attrs.size());
     for (int i = 0; i < _attrs.size(); ++i) {
-        unsigned attrOffset = ByteArray::decode(_data + 2 * i, 2);
-        result[i] = (attrOffset == 0);
+        result[i] = isAttrNull(i);
         LOG("Attribute " << i << " at offset " << attrOffset << " is "
             << (!result[i] ? "not " : "") << "null");
     }
@@ -99,6 +155,13 @@ void RecordDecoder::setRecordData(byte *recordAddr, unsigned size) {
     _data = recordAddr;
     _size = size;
 }
+
+
+bool RecordDecoder::isAttrNull(int attrPos) {
+    unsigned attrOffset = ByteArray::decode(getAttrAddr(attrPos), 2);
+    return attrOffset == 0;
+}
+
 
 #undef LOG
 

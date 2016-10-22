@@ -24,6 +24,8 @@ public:
     inline bool hasAnotherRID();
     RID decodeNextRID();
     void decode(byte *dst);
+    RC decodeAttr(byte *dst, const vector<Attribute>& recordDescriptor,
+                           const string& attributeName);
 
 private:
     byte *_header;  // Contains information to whether the record is in the

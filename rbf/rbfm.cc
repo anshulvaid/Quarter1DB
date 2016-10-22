@@ -187,3 +187,23 @@ RC RecordBasedFileManager::deleteRecord(FileHandle& fileHandle,
     }
     return -1;
 }
+
+
+
+RC RecordBasedFileManager::readAttribute(FileHandle& fileHandle,
+                                     const vector<Attribute>& recordDescriptor,
+                                     const RID& rid,
+                                     const string& attributeName,
+                                     void *data) {
+    Page p;         // allocate memory to read the page
+    Maybe<RCDecoder> rc = findRecord(p, fileHandle, recordDescriptor, rid);
+    if (rc) {
+        if ((*rc).hasAnotherRID()) {
+            return readAttribute(fileHandle, recordDescriptor,
+                              (*rc).decodeNextRID(), attributeName, data);
+        }
+
+        return (*rc).decodeAttr((byte *) data, recordDescriptor, attributeName);
+    }
+    return -1;
+}
