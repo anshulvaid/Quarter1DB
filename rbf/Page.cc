@@ -62,13 +62,44 @@ RC Page::readRecord(unsigned slotNum,
                     byte **recordAddr, unsigned *recordSize) const {
     LOG("Read record on slot " << slotNum);
 
-    if (getNumberSlots() >= slotNum) {
+    if (getNumberSlots() >= slotNum && !recordWasDeleted(slotNum)) {
         *recordAddr = getRecordAddr(slotNum);
         LOG("Record starts at the address " << (void *) *recordAddr);
         LOG("Page starts at address " << (void *) _data);
         *recordSize = getRecordSize(slotNum);
         LOG("Record has size " << *recordSize);
         return 0;
+    }
+
+    return -1;
+}
+
+
+RC Page::deleteRecord(unsigned slotNum) {
+    LOG("Deleting record on slot " << slotNum);
+
+    if (getNumberSlots() >= slotNum && !recordWasDeleted(slotNum)) {
+        byte *recordAddr = getRecordAddr(slotNum);
+        unsigned recordSize = getRecordSize(slotNum);
+        unsigned toCopy = getFreeSpaceAddr() - (recordAddr + recordSize);
+
+        // Overwrite record data by shifting back all the following
+        // records in the page
+        memmove(recordAddr, recordAddr + recordSize, toCopy);
+
+        // Update offsets for all records in the page
+        for (unsigned s = 0; s < getNumberSlots(); ++s) {
+            // Only update the records that follow
+            if (getRecordAddr(s) > recordAddr) {
+                setRecordOffset(s, getRecordOffset(s) - recordSize);
+            }
+        }
+
+        // Update free space offset
+        setFreeSpaceOffset(getFreeSpaceOffset() - recordSize);
+
+        // Update slot information to mark it as deleted
+        setRecordOffset(slotNum, 0xFFFF);
     }
 
     return -1;
@@ -127,6 +158,17 @@ unsigned Page::getRecordOffset(unsigned slotNum) const {
 
 byte *Page::getRecordAddr(unsigned slotNum) const {
     return _data + getRecordOffset(slotNum);
+}
+
+bool Page::recordWasDeleted(unsigned slotNum) const {
+    return slotCanBeReused(slotNum);
+}
+
+
+// Record modifiers
+void Page::setRecordOffset(unsigned slotNum, unsigned offset) {
+    LOG("Setting the record " << slotNum << "to offset " << offset);
+    write(getNthSlotAddr(slotNum), ByteArray::encode(offset), 2);
 }
 
 

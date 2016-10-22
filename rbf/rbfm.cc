@@ -170,13 +170,20 @@ RC RecordBasedFileManager::printRecord(
 
 
 
-RC deleteRecord(FileHandle& fileHandle,
+RC RecordBasedFileManager::deleteRecord(FileHandle& fileHandle,
                 const vector<Attribute>& recordDescriptor,
                 const RID& rid) {
-    Page p;
-    if (fileHandle.readPage(rid.pageNum, p.getData()) != -1) {
-        // return p.deleteRecord(rid.slotNum, recordDescriptor);
-    }
 
+    Page p;         // allocate memory to read the page
+    Maybe<RCDecoder> rc = findRecord(p, fileHandle, recordDescriptor, rid);
+    if (rc) {
+        if ((*rc).hasAnotherRID()) {
+            RID nextRID = (*rc).decodeNextRID();
+            p.deleteRecord(rid.slotNum);
+            return deleteRecord(fileHandle, recordDescriptor, nextRID);
+        }
+        p.deleteRecord(rid.slotNum);
+        return 0;
+    }
     return -1;
 }

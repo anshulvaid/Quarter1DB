@@ -22,6 +22,9 @@ public:
     RC readRecord(unsigned slotNum,
                   byte **recordAddr, unsigned *recordSize) const;
 
+    // Delete record
+    RC deleteRecord(unsigned slotNum);
+
     bool canStoreRecord(int size) const;
 
     // Reset page format. Clears all data
@@ -35,6 +38,10 @@ protected:   // for testing purposes
     unsigned getRecordSize(unsigned slotNum) const;
     unsigned getRecordOffset(unsigned slotNum) const;
     byte *getRecordAddr(unsigned slotNum) const;
+    bool recordWasDeleted(unsigned slotNum) const;
+
+    // Record modifiers
+    void setRecordOffset(unsigned slotNum, unsigned offset);
 
 
     // Slots accessors
